@@ -29,9 +29,4 @@ public class CelestialBody{
     private float orbitalVelocity;
     private float surfaceTemperature;
 
-    public void addAmount(int amount){
-        if (amount>0){
-            this.amount +=amount;
-        }
-    }
 }
