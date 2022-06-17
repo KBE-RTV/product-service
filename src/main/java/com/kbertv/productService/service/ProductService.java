@@ -8,7 +8,6 @@ import com.kbertv.productService.model.CelestialBodyTypes;
 import com.kbertv.productService.model.PlanetarySystem;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -23,6 +22,7 @@ public class ProductService implements IProductService{
 
     private final CelestialBodyRepository celestialBodyRepository;
     private final PlanetarySystemRepository planetarySystemRepository;
+    private final String WAREHOUS_BASEEURL = "http://localhost:8080/";
 
     public ProductService(CelestialBodyRepository celestialBodyRepository, PlanetarySystemRepository planetarySystemRepository) {
         this.celestialBodyRepository = celestialBodyRepository;
@@ -31,7 +31,6 @@ public class ProductService implements IProductService{
 
     @Override
     public PlanetarySystem createPlanetarySystem(String name ,String owner, ArrayList<UUID> celestialBodies) {
-
         if (isCompositionCorrect(celestialBodies)){
             return planetarySystemRepository.save(new PlanetarySystem(UUID.randomUUID(),name ,owner, celestialBodies));
         }else{
@@ -64,38 +63,45 @@ public class ProductService implements IProductService{
 
     @EventListener(ApplicationReadyEvent.class)
     public void getInventoryFromWarehouse(){
+        getCelestialBodiesFromWarehouse();
+        getPlanetarySystemsFromWarehouse();
+    }
+
+    private void getCelestialBodiesFromWarehouse(){
         RestTemplate restTemplate = new RestTemplate();
         final ObjectMapper objectMapper = new ObjectMapper();
         try {
-            String celestialBodyJSON = restTemplate.getForEntity("http://localhost:8080/components", String.class).getBody();
-            String planetarySystemsJSON = restTemplate.getForEntity("http://localhost:8080/products", String.class).getBody();
-
+            String celestialBodyJSON = restTemplate.getForEntity(WAREHOUS_BASEEURL + "components", String.class).getBody();
             CelestialBody[] celestialBodies = objectMapper.readValue(celestialBodyJSON, CelestialBody[].class);
-            PlanetarySystem[] planetarySystems = objectMapper.readValue(planetarySystemsJSON, PlanetarySystem[].class);
-
             celestialBodyRepository.saveAll(Arrays.asList(celestialBodies));
-            planetarySystemRepository.saveAll(Arrays.asList(planetarySystems));
-
-            System.out.println("Warehouse imported");
+            System.out.println("Celestial Bodies imported");
         }catch (RestClientException e){
-            System.err.println("Warehouse not reachable");
-            e.printStackTrace();
+            System.err.println("Warehouse not reachable: " + e.getMessage());
         } catch (JsonProcessingException e) {
-            System.err.println("Import failed");
-            e.printStackTrace();
+            System.err.println("Import failed: "+ e.getMessage());
+        }
+    }
+
+    private void getPlanetarySystemsFromWarehouse(){
+        RestTemplate restTemplate = new RestTemplate();
+        final ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            String planetarySystemsJSON = restTemplate.getForEntity(WAREHOUS_BASEEURL + "products", String.class).getBody();
+            PlanetarySystem[] planetarySystems = objectMapper.readValue(planetarySystemsJSON, PlanetarySystem[].class);
+            planetarySystemRepository.saveAll(Arrays.asList(planetarySystems));
+            System.out.println("Planetary Systems imported");
+        }catch (RestClientException e){
+            System.err.println("Warehouse not reachable: " + e.getMessage());
+        } catch (JsonProcessingException e) {
+            System.err.println("Import failed: "+ e.getMessage());
         }
     }
 
     @PreDestroy
     public void saveInventoryToWarehouse(){
         RestTemplate restTemplate = new RestTemplate();
-        String url = "http://localhost:8080/products/";
+        String url = WAREHOUS_BASEEURL + "products";
         ArrayList<PlanetarySystem> planetarySystems = (ArrayList<PlanetarySystem>) planetarySystemRepository.findAll();
-
-        for (PlanetarySystem system : planetarySystems) {
-            HttpEntity<PlanetarySystem> request = new HttpEntity<>(system);
-            url += "" + system.getId().toString();
-            restTemplate.postForObject(url, request, PlanetarySystem.class);
-        }
+        restTemplate.postForObject(url,planetarySystems, ArrayList.class);
     }
 }
