@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kbertv.productService.exception.CelestialBodyNotFoundException;
 import com.kbertv.productService.model.CelestialBody;
-import com.kbertv.productService.model.CelestialBodyTypes;
 import com.kbertv.productService.model.PlanetarySystem;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -49,7 +48,7 @@ public class ProductService implements IProductService{
             } catch (CelestialBodyNotFoundException e) {
                 return false;
             }
-            return celestialBodies.get(0).getType().equals(CelestialBodyTypes.sun);
+            return celestialBodies.get(0).getType().equals("sun");
         }
     }
 
