@@ -4,15 +4,14 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.io.Serializable;
 import java.util.UUID;
 
-@Getter
-@Setter
-@ToString
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "components")
-public class CelestialBody{
+public class CelestialBody implements Serializable{
 
     @Id
     private UUID id;
