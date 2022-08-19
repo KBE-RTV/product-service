@@ -6,15 +6,14 @@ import com.kbertv.productService.exception.CelestialBodyNotFoundException;
 import com.kbertv.productService.model.CelestialBody;
 import com.kbertv.productService.model.PlanetarySystem;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PreDestroy;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class ProductService implements IProductService{
@@ -36,6 +35,28 @@ public class ProductService implements IProductService{
             return null;
         }
 
+    }
+
+    @Override
+    public List<PlanetarySystem> getAllProducts() {
+        return planetarySystemRepository.findAll();
+    }
+
+    @Override
+    @Cacheable(value = "productCache")
+    public Optional<PlanetarySystem> getProduct(UUID id) {
+        return planetarySystemRepository.findById(id);
+    }
+
+    @Override
+    public List<CelestialBody> getAllComponents() {
+        return celestialBodyRepository.findAll();
+    }
+
+    @Override
+    @Cacheable(value = "componentCache")
+    public Optional<CelestialBody> getComponent(UUID id) {
+        return celestialBodyRepository.findById(id);
     }
 
     private boolean isCompositionCorrect(ArrayList<UUID> celestialBodyIds) {
@@ -60,6 +81,7 @@ public class ProductService implements IProductService{
         return celestialBodies;
     }
 
+    @Override
     @EventListener(ApplicationReadyEvent.class)
     public void getInventoryFromWarehouse(){
         getCelestialBodiesFromWarehouse();
