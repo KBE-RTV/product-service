@@ -19,7 +19,7 @@ public class CelestialBody{
     private String name;
     private int amount;
     private float price;
-    private CelestialBodyTypes type;
+    private String type;
     private int orbital;
     private float radius;
     private float volume;
