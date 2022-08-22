@@ -20,7 +20,7 @@ public class ProductService implements IProductService{
 
     private final CelestialBodyRepository celestialBodyRepository;
     private final PlanetarySystemRepository planetarySystemRepository;
-    private final String WAREHOUSE_BASEURL = "http://warehouse:8080/";
+    private final String WAREHOUS_BASEEURL = "http://localhost:8080/";
 
     public ProductService(CelestialBodyRepository celestialBodyRepository, PlanetarySystemRepository planetarySystemRepository) {
         this.celestialBodyRepository = celestialBodyRepository;
@@ -34,10 +34,10 @@ public class ProductService implements IProductService{
         }else{
             return null;
         }
+
     }
 
     @Override
-    @Cacheable(value = "allProductsCache")
     public List<PlanetarySystem> getAllProducts() {
         return planetarySystemRepository.findAll();
     }
@@ -49,7 +49,6 @@ public class ProductService implements IProductService{
     }
 
     @Override
-    @Cacheable(value = "allComponentsCache")
     public List<CelestialBody> getAllComponents() {
         return celestialBodyRepository.findAll();
     }
@@ -93,7 +92,7 @@ public class ProductService implements IProductService{
         RestTemplate restTemplate = new RestTemplate();
         final ObjectMapper objectMapper = new ObjectMapper();
         try {
-            String celestialBodyJSON = restTemplate.getForEntity(WAREHOUSE_BASEURL + "components", String.class).getBody();
+            String celestialBodyJSON = restTemplate.getForEntity(WAREHOUS_BASEEURL + "components", String.class).getBody();
             CelestialBody[] celestialBodies = objectMapper.readValue(celestialBodyJSON, CelestialBody[].class);
             celestialBodyRepository.saveAll(Arrays.asList(celestialBodies));
             System.out.println("Celestial Bodies imported");
@@ -108,7 +107,7 @@ public class ProductService implements IProductService{
         RestTemplate restTemplate = new RestTemplate();
         final ObjectMapper objectMapper = new ObjectMapper();
         try {
-            String planetarySystemsJSON = restTemplate.getForEntity(WAREHOUSE_BASEURL + "products", String.class).getBody();
+            String planetarySystemsJSON = restTemplate.getForEntity(WAREHOUS_BASEEURL + "products", String.class).getBody();
             PlanetarySystem[] planetarySystems = objectMapper.readValue(planetarySystemsJSON, PlanetarySystem[].class);
             planetarySystemRepository.saveAll(Arrays.asList(planetarySystems));
             System.out.println("Planetary Systems imported");
@@ -122,7 +121,7 @@ public class ProductService implements IProductService{
     @PreDestroy
     public void saveInventoryToWarehouse(){
         RestTemplate restTemplate = new RestTemplate();
-        String url = WAREHOUSE_BASEURL + "products";
+        String url = WAREHOUS_BASEEURL + "products";
         ArrayList<PlanetarySystem> planetarySystems = (ArrayList<PlanetarySystem>) planetarySystemRepository.findAll();
         restTemplate.postForObject(url,planetarySystems, ArrayList.class);
     }
