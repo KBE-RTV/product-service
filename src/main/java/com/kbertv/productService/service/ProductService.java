@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kbertv.productService.exception.CelestialBodyNotFoundException;
 import com.kbertv.productService.model.CelestialBody;
 import com.kbertv.productService.model.PlanetarySystem;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.event.EventListener;
@@ -20,7 +21,8 @@ public class ProductService implements IProductService{
 
     private final CelestialBodyRepository celestialBodyRepository;
     private final PlanetarySystemRepository planetarySystemRepository;
-    private final String WAREHOUSE_BASEURL = "http://warehouse:8080/";
+    @Value("${warehouse.baseurl}")
+    private String WAREHOUSE_BASEURL;
 
     public ProductService(CelestialBodyRepository celestialBodyRepository, PlanetarySystemRepository planetarySystemRepository) {
         this.celestialBodyRepository = celestialBodyRepository;
