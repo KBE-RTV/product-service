@@ -20,7 +20,7 @@ public class ProductService implements IProductService{
 
     private final CelestialBodyRepository celestialBodyRepository;
     private final PlanetarySystemRepository planetarySystemRepository;
-    private final String WAREHOUSE_BASEURL = "http://warehouse:8080/";
+    private final String WAREHOUSE_BASEURL = "http://warehouse:8081/";
 
     public ProductService(CelestialBodyRepository celestialBodyRepository, PlanetarySystemRepository planetarySystemRepository) {
         this.celestialBodyRepository = celestialBodyRepository;
