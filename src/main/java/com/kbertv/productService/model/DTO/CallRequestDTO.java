@@ -10,14 +10,14 @@ import java.util.UUID;
 @Getter
 @Setter
 @ToString
-public class callDTO {
+public class CallRequestDTO {
     private UUID requestID;
     private UUID detailID;
     private String type;
 
-    public callDTO(@JsonProperty("requestID") UUID requestID,
-                   @JsonProperty("detailID") UUID detailID,
-                   @JsonProperty("type") String type){
+    public CallRequestDTO(@JsonProperty("requestID") UUID requestID,
+                          @JsonProperty("detailID") UUID detailID,
+                          @JsonProperty("type") String type){
         this.requestID = requestID;
         this.detailID = detailID;
         this.type = type;

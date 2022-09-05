@@ -6,18 +6,17 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.ArrayList;
 import java.util.UUID;
 
 @Getter
 @Setter
 @ToString
-public class ProductDetailDTO {
+public class CallCreateDTO {
     private UUID requestID;
-    private ArrayList<PlanetarySystem> planetarySystem;
+    private PlanetarySystem planetarySystem;
 
-    public ProductDetailDTO(@JsonProperty("requestID") UUID requestID,
-                            @JsonProperty("planetarySystem") ArrayList<PlanetarySystem> planetarySystem){
+    public CallCreateDTO(@JsonProperty("requestID") UUID requestID,
+                          @JsonProperty("detailID") PlanetarySystem planetarySystem){
         this.requestID = requestID;
         this.planetarySystem = planetarySystem;
     }

@@ -16,10 +16,8 @@ public class PlanetarySystem implements Serializable {
 
     @Id
     private UUID id;
-
     private String name;
-
     private String owner;
-
-    private ArrayList<UUID> celestialBodies = new ArrayList<>();
+    private ArrayList<CelestialBody> celestialBodies = new ArrayList<>();
+    private float price;
 }

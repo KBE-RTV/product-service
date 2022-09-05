@@ -2,7 +2,7 @@ package com.kbertv.productService.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kbertv.productService.exception.CelestialBodyNotFoundException;
+import com.kbertv.productService.client.ResponseProducer;
 import com.kbertv.productService.model.CelestialBody;
 import com.kbertv.productService.model.PlanetarySystem;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,27 +21,31 @@ public class ProductService implements IProductService{
 
     private final CelestialBodyRepository celestialBodyRepository;
     private final PlanetarySystemRepository planetarySystemRepository;
+    private final ResponseProducer responseProducer;
     @Value("${warehouse.baseurl}")
     private String WAREHOUSE_BASEURL;
 
-    public ProductService(CelestialBodyRepository celestialBodyRepository, PlanetarySystemRepository planetarySystemRepository) {
+    public ProductService(CelestialBodyRepository celestialBodyRepository, PlanetarySystemRepository planetarySystemRepository, ResponseProducer responseProducer) {
         this.celestialBodyRepository = celestialBodyRepository;
         this.planetarySystemRepository = planetarySystemRepository;
+        this.responseProducer = responseProducer;
     }
 
     @Override
-    public PlanetarySystem createPlanetarySystem(String name ,String owner, ArrayList<UUID> celestialBodies) {
+    public PlanetarySystem createPlanetarySystem(String name ,String owner, ArrayList<CelestialBody> celestialBodies) {
         if (isCompositionCorrect(celestialBodies)){
-            return planetarySystemRepository.save(new PlanetarySystem(UUID.randomUUID(),name ,owner, celestialBodies));
+            //TODO RMQ Call to Price Service for price of product
+            //TODO add PlanetarySystem with price ONLY to Cache via @CachePut
+            float price = -1f;
+            return planetarySystemRepository.save(new PlanetarySystem(UUID.randomUUID(),name ,owner, celestialBodies,price));
         }else{
             return null;
         }
-
     }
 
     @Override
     @Cacheable(value = "allProductsCache")
-    public List<PlanetarySystem> getAllProducts() {
+    public  List<PlanetarySystem> getAllProducts() {
         return planetarySystemRepository.findAll();
     }
 
@@ -63,26 +67,12 @@ public class ProductService implements IProductService{
         return celestialBodyRepository.findById(id);
     }
 
-    private boolean isCompositionCorrect(ArrayList<UUID> celestialBodyIds) {
-        if (celestialBodyIds.isEmpty()){
+    private boolean isCompositionCorrect(ArrayList<CelestialBody> celestialBodies) {
+        if (celestialBodies.isEmpty()){
             return false;
-        }else {
-            ArrayList<CelestialBody> celestialBodies;
-            try {
-                celestialBodies = idToObjects(celestialBodyIds);
-            } catch (CelestialBodyNotFoundException e) {
-                return false;
-            }
+        }else{
             return celestialBodies.get(0).getType().equals("sun");
         }
-    }
-
-    private ArrayList<CelestialBody> idToObjects(ArrayList<UUID> idList) throws CelestialBodyNotFoundException {
-        ArrayList<CelestialBody> celestialBodies = new ArrayList<>();
-        for (UUID uuid : idList) {
-            celestialBodies.add(celestialBodyRepository.findById(uuid).orElseThrow(()->new CelestialBodyNotFoundException(uuid+" not found")));
-        }
-        return celestialBodies;
     }
 
     @Override
@@ -127,6 +117,9 @@ public class ProductService implements IProductService{
         RestTemplate restTemplate = new RestTemplate();
         String url = WAREHOUSE_BASEURL + "products";
         ArrayList<PlanetarySystem> planetarySystems = (ArrayList<PlanetarySystem>) planetarySystemRepository.findAll();
+        planetarySystems.forEach((planetarySystem -> {
+            planetarySystem.setPrice(-1f);
+        }));
         restTemplate.postForObject(url,planetarySystems, ArrayList.class);
     }
 }

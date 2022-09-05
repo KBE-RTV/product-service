@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.UUID;
 
 @Getter
@@ -13,10 +14,10 @@ import java.util.UUID;
 @ToString
 public class ComponentDetailDTO {
     private UUID requestID;
-    private CelestialBody celestialBody;
+    private ArrayList<CelestialBody> celestialBody;
 
     public ComponentDetailDTO(@JsonProperty("requestID") UUID requestID,
-                              @JsonProperty("celestialBody") CelestialBody celestialBody){
+                              @JsonProperty("celestialBody") ArrayList<CelestialBody> celestialBody){
         this.requestID = requestID;
         this.celestialBody = celestialBody;
     }

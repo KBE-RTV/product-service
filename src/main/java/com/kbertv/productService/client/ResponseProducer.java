@@ -14,6 +14,9 @@ public class ResponseProducer {
     @Value("${rabbitmq.routing.response.key}")
     private String responseRoutingKey;
 
+    @Value("${rabbitmq.queue.call.price.key}")
+    private String priceServiceCallRoutingKey;
+
     private static RabbitTemplate rabbitTemplate;
 
     @Autowired
@@ -21,8 +24,13 @@ public class ResponseProducer {
         ResponseProducer.rabbitTemplate = rabbitTemplate;
     }
 
-    public void sendResponse(String jsonResponse){
+    public void sendResponseToGateWay(String jsonResponse){
         rabbitTemplate.convertAndSend(exchange, responseRoutingKey, jsonResponse);
-        System.out.println("SENT: " + jsonResponse + "\n");
+        System.out.println("SENT TO GATEWAY: " + jsonResponse + "\n");
+    }
+
+    public void sendCallToPriceService(String jsonCall){
+        rabbitTemplate.convertAndSend(exchange,priceServiceCallRoutingKey,jsonCall);
+        System.out.println("SENT TO PRICE SERVICE: " + jsonCall + "\n");
     }
 }

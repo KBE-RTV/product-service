@@ -13,7 +13,7 @@ import java.util.UUID;
 
 public interface IProductService {
 
-    PlanetarySystem createPlanetarySystem(String name, String owner, ArrayList<UUID> celestialBodies);
+    PlanetarySystem createPlanetarySystem(String name ,String owner, ArrayList<CelestialBody> celestialBodies);
 
     List<PlanetarySystem> getAllProducts();
 

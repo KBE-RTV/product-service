@@ -27,5 +27,4 @@ public class CelestialBody implements Serializable{
     private float rotationVelocity;
     private float orbitalVelocity;
     private float surfaceTemperature;
-
 }
