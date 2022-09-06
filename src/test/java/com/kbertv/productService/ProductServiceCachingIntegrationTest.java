@@ -54,7 +54,7 @@ public class ProductServiceCachingIntegrationTest {
     @Test
     void givenRedisCaching_whenFindComponentById_thenComponentReturnedFromCache() {
         UUID UUID_Body1 = UUID.fromString("9708b2f4-98d6-4891-b59e-52da0a484fc5");
-        CelestialBody celestialBody1 = new CelestialBody(UUID_Body1,"Body1",1,1f,"EUR","sun",1,1f,1f,1f,1f,1f,1f,1f);
+        CelestialBody celestialBody1 = new CelestialBody(UUID_Body1,"Body1",1,1f,"sun",1,1f,1f,1f,1f,1f,1f,1f);
         given(mockCelestialBodyRepository.findById(UUID_Body1))
                 .willReturn(Optional.of(celestialBody1));
 
