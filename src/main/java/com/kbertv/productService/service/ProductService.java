@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kbertv.productService.client.ResponseProducer;
 import com.kbertv.productService.model.CelestialBody;
 import com.kbertv.productService.model.PlanetarySystem;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.cache.annotation.Cacheable;
@@ -17,26 +18,23 @@ import javax.annotation.PreDestroy;
 import java.util.*;
 
 @Service
+@Slf4j
 public class ProductService implements IProductService{
 
     private final CelestialBodyRepository celestialBodyRepository;
     private final PlanetarySystemRepository planetarySystemRepository;
-    private final ResponseProducer responseProducer;
     @Value("${warehouse.baseurl}")
-    private String WAREHOUSE_BASEURL;
+    private String warehouseBaseurl;
 
     public ProductService(CelestialBodyRepository celestialBodyRepository, PlanetarySystemRepository planetarySystemRepository, ResponseProducer responseProducer) {
         this.celestialBodyRepository = celestialBodyRepository;
         this.planetarySystemRepository = planetarySystemRepository;
-        this.responseProducer = responseProducer;
     }
 
     @Override
-    public PlanetarySystem createPlanetarySystem(String name ,String owner, ArrayList<CelestialBody> celestialBodies) {
+    public PlanetarySystem createPlanetarySystem(String name, String owner, ArrayList<CelestialBody> celestialBodies, float price) {
         if (isCompositionCorrect(celestialBodies)){
-            //TODO RMQ Call to Price Service for price of product
             //TODO add PlanetarySystem with price ONLY to Cache via @CachePut
-            float price = -1f;
             return planetarySystemRepository.save(new PlanetarySystem(UUID.randomUUID(),name ,owner, celestialBodies,price));
         }else{
             return null;
@@ -86,14 +84,14 @@ public class ProductService implements IProductService{
         RestTemplate restTemplate = new RestTemplate();
         final ObjectMapper objectMapper = new ObjectMapper();
         try {
-            String celestialBodyJSON = restTemplate.getForEntity(WAREHOUSE_BASEURL + "components", String.class).getBody();
+            String celestialBodyJSON = restTemplate.getForEntity(warehouseBaseurl + "components", String.class).getBody();
             CelestialBody[] celestialBodies = objectMapper.readValue(celestialBodyJSON, CelestialBody[].class);
             celestialBodyRepository.saveAll(Arrays.asList(celestialBodies));
-            System.out.println("Celestial Bodies imported");
+            log.info("Celestial Bodies imported");
         }catch (RestClientException e){
-            System.err.println("Warehouse not reachable: " + e.getMessage());
+            log.error("Warehouse not reachable: " + e.getMessage());
         } catch (JsonProcessingException e) {
-            System.err.println("Import failed: "+ e.getMessage());
+            log.error("Import failed: "+ e.getMessage());
         }
     }
 
@@ -101,25 +99,23 @@ public class ProductService implements IProductService{
         RestTemplate restTemplate = new RestTemplate();
         final ObjectMapper objectMapper = new ObjectMapper();
         try {
-            String planetarySystemsJSON = restTemplate.getForEntity(WAREHOUSE_BASEURL + "products", String.class).getBody();
+            String planetarySystemsJSON = restTemplate.getForEntity(warehouseBaseurl + "products", String.class).getBody();
             PlanetarySystem[] planetarySystems = objectMapper.readValue(planetarySystemsJSON, PlanetarySystem[].class);
             planetarySystemRepository.saveAll(Arrays.asList(planetarySystems));
-            System.out.println("Planetary Systems imported");
+            log.info("Planetary Systems imported");
         }catch (RestClientException e){
-            System.err.println("Warehouse not reachable: " + e.getMessage());
+            log.error("Warehouse not reachable: " + e.getMessage());
         } catch (JsonProcessingException e) {
-            System.err.println("Import failed: "+ e.getMessage());
+            log.error("Import failed: "+ e.getMessage());
         }
     }
 
     @PreDestroy
     public void saveInventoryToWarehouse(){
         RestTemplate restTemplate = new RestTemplate();
-        String url = WAREHOUSE_BASEURL + "products";
+        String url = warehouseBaseurl + "products";
         ArrayList<PlanetarySystem> planetarySystems = (ArrayList<PlanetarySystem>) planetarySystemRepository.findAll();
-        planetarySystems.forEach((planetarySystem -> {
-            planetarySystem.setPrice(-1f);
-        }));
+        planetarySystems.forEach((planetarySystem -> planetarySystem.setPrice(-1f)));
         restTemplate.postForObject(url,planetarySystems, ArrayList.class);
     }
 }

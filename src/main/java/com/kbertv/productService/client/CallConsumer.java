@@ -9,6 +9,7 @@ import com.kbertv.productService.model.DTO.ComponentDetailDTO;
 import com.kbertv.productService.model.DTO.ProductDetailDTO;
 import com.kbertv.productService.model.PlanetarySystem;
 import com.kbertv.productService.service.ProductService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 
@@ -16,9 +17,10 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 @Service
+@Slf4j
 public class CallConsumer {
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private ObjectMapper objectMapper;
     private ProductService productService;
     private ResponseProducer responseProducer;
 
@@ -28,9 +30,10 @@ public class CallConsumer {
     }
 
     @RabbitListener(queues = {"${rabbitmq.queue.call.name}"})
-    public void consumeCallFromGateWay(String jsonMessage){
+    public void consumeCallFromGateWay(String jsonMessage) {
+        objectMapper = new ObjectMapper();
         try {
-            CallRequestDTO callRequestDTO = objectMapper.convertValue(jsonMessage, CallRequestDTO.class);
+            CallRequestDTO callRequestDTO = objectMapper.readValue(jsonMessage, CallRequestDTO.class);
             if (callRequestDTO.getType().equals("product") && callRequestDTO.getDetailID() !=null){
                 responseProducer.sendResponseToGateWay(getProductJson(callRequestDTO));
             }
@@ -43,17 +46,24 @@ public class CallConsumer {
             if(callRequestDTO.getType().equals("product") && callRequestDTO.getDetailID() ==null){
                 responseProducer.sendResponseToGateWay(getAllProductsJson(callRequestDTO));
             }
+            log.info("Received and processed message: " + jsonMessage);
         }catch (Exception e){
-            CallCreateDTO callCreateDTO = objectMapper.convertValue(jsonMessage, CallCreateDTO.class);
-
+            try {
+                CallCreateDTO callCreateDTO = objectMapper.readValue(jsonMessage, CallCreateDTO.class);
+                //TODO RMQ Call to Price Service for price of product
+                log.info("Received and processed message: " + jsonMessage);
+            }catch (Exception f){
+                log.error("Message could not be parsed: "+jsonMessage +System.lineSeparator() +f +System.lineSeparator()+e);
+            }
         }
-        System.out.println("RECEIVED FROM GATEWAY: " + jsonMessage);
     }
 
+    /*
     @RabbitListener(queues = {"${rabbitmq.queue.call.price.name}"})
     public void consumeCallFromPriceService(String jsonMessage){
-        System.out.println("RECEIVED FROM PRICE SERVICE: " + jsonMessage);
+        logger.info("Received and processed message: " + jsonMessage);
     }
+     */
 
     public String getAllComponentsJson(CallRequestDTO callRequestDTO) throws JsonProcessingException {
         ArrayList<CelestialBody> celestialBodies = (ArrayList<CelestialBody>) productService.getAllComponents();
