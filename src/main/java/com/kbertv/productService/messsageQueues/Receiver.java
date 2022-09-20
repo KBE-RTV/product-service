@@ -11,10 +11,12 @@ import com.kbertv.productService.model.PlanetarySystem;
 import com.kbertv.productService.service.ProductService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Class wich receives messages form the queue
@@ -49,7 +51,12 @@ public class Receiver {
         try {
             CallRequestDTO callRequestDTO = objectMapper.readValue(jsonMessage, CallRequestDTO.class);
             if (callRequestDTO.getType().equals("product") && callRequestDTO.getDetailID() !=null){
-                sender.sendResponseToGateWay(getProductJson(callRequestDTO));
+                ProductDetailDTO productDetailDTO = getProduct(callRequestDTO);
+                if (isPriceCalculated(productDetailDTO)){
+                    sender.sendResponseToGateWay(objectMapper.writeValueAsString(productDetailDTO));
+                }else{
+                    sender.sendCallToPriceService(objectMapper.writeValueAsString(productDetailDTO));
+                }
             }
             if (callRequestDTO.getType().equals("component") && callRequestDTO.getDetailID() !=null){
                 sender.sendResponseToGateWay(getComponentJson(callRequestDTO));
@@ -58,13 +65,23 @@ public class Receiver {
                 sender.sendResponseToGateWay(getAllComponentsJson(callRequestDTO));
             }
             if(callRequestDTO.getType().equals("product") && callRequestDTO.getDetailID() ==null){
-                sender.sendResponseToGateWay(getAllProductsJson(callRequestDTO));
+                ProductDetailDTO productDetailDTO = getAllProducts(callRequestDTO);
+                if (isPriceCalculated(productDetailDTO)){
+                    sender.sendResponseToGateWay(objectMapper.writeValueAsString(productDetailDTO));
+                }else{
+                    sender.sendCallToPriceService(objectMapper.writeValueAsString(productDetailDTO));
+                }
             }
             log.info("Received and processed message: " + jsonMessage);
         }catch (Exception e){
             try {
                 CallCreateDTO callCreateDTO = objectMapper.readValue(jsonMessage, CallCreateDTO.class);
-                //TODO RMQ Call to Price Service for price of product
+                ProductDetailDTO productDetailDTO = createPlanetarySystem(callCreateDTO);
+                if (isPriceCalculated(productDetailDTO)){
+                    sender.sendResponseToGateWay(objectMapper.writeValueAsString(productDetailDTO));
+                }else{
+                    sender.sendCallToPriceService(objectMapper.writeValueAsString(productDetailDTO));
+                }
                 log.info("Received and processed message: " + jsonMessage);
             }catch (Exception f){
                 log.error("Message could not be parsed: "+jsonMessage +System.lineSeparator() +f +System.lineSeparator()+e);
@@ -72,12 +89,69 @@ public class Receiver {
         }
     }
 
-    /*
-    @RabbitListener(queues = {"${rabbitmq.queue.call.price.name}"})
-    public void consumeCallFromPriceService(String jsonMessage){
-        logger.info("Received and processed message: " + jsonMessage);
-    }
+    /**
+     * Helper Method to check if the price of a Product is already calculated.
+     * @param productDetailDTO {@link com.kbertv.productService.model.dto.ProductDetailDTO}
+     * @return true if price is calculated, else false
      */
+    private boolean isPriceCalculated(ProductDetailDTO productDetailDTO){
+        ArrayList<PlanetarySystem> planetarySystems = productDetailDTO.getPlanetarySystems();
+        boolean flag = true;
+        for (PlanetarySystem planetarySystem : planetarySystems) {
+            if (planetarySystem.getPrice() == -1f) {
+                flag = false;
+                break;
+            }
+        }
+        return flag;
+    }
+
+
+    /**
+     * Forwards all messages to the Gateway and caches them
+     * @param jsonMessage Message
+     */
+    @RabbitListener(queues = {"${rabbitmq.queue.call.price.name}"})
+    public void consumeCallFromPriceService(String jsonMessage) {
+        ProductDetailDTO productDetailDTO;
+        try {
+            productDetailDTO = objectMapper.readValue(jsonMessage, ProductDetailDTO.class);
+            ArrayList<PlanetarySystem> planetarySystems = productDetailDTO.getPlanetarySystems();
+            for (PlanetarySystem planetarySystem:planetarySystems){
+                putPlanetarySystemWithPriceInCache(planetarySystem.getId(),planetarySystem);
+            }
+        }catch (Exception e){
+            log.error("Message could not be parsed: "+jsonMessage +System.lineSeparator() +e);
+        }
+        sender.sendResponseToGateWay(jsonMessage);
+        log.info("Received and processed message: " + jsonMessage);
+    }
+
+    /**
+     * Helper Method to cache {@link com.kbertv.productService.model.PlanetarySystem}
+     * @param uuid ID of {@link com.kbertv.productService.model.PlanetarySystem}
+     * @param planetarySystem {@link com.kbertv.productService.model.PlanetarySystem}
+     * @return {@link com.kbertv.productService.model.PlanetarySystem}
+     */
+    @CachePut(cacheNames = "productCache", key = "#p0")
+    public PlanetarySystem putPlanetarySystemWithPriceInCache(UUID uuid, PlanetarySystem planetarySystem){
+        return planetarySystem;
+    }
+
+    /**
+     * Helper Method to create {@link com.kbertv.productService.model.PlanetarySystem}
+     * @param callCreateDTO {@link com.kbertv.productService.model.dto.CallCreateDTO}
+     * @return {@link com.kbertv.productService.model.dto.ProductDetailDTO}
+     */
+    private ProductDetailDTO createPlanetarySystem(CallCreateDTO callCreateDTO) {
+        PlanetarySystem callPlanetarySystem = callCreateDTO.getPlanetarySystem();
+        PlanetarySystem planetarySystem = productService.createPlanetarySystem(callPlanetarySystem.getName(),callPlanetarySystem.getOwner(),callPlanetarySystem.getCelestialBodies());
+        ArrayList<PlanetarySystem> planetarySystems = new ArrayList<>();
+        if (planetarySystem != null){
+            planetarySystems.add(planetarySystem);
+        }
+        return new ProductDetailDTO(callCreateDTO.getRequestID(),planetarySystems);
+    }
 
     /**
      * Helper Method to create and fill the correct response DTO and converts it to JSON String.
@@ -86,23 +160,21 @@ public class Receiver {
      * @return {@link com.kbertv.productService.model.dto.ComponentDetailDTO} as JSON String
      * @throws JsonProcessingException if the DTO could not be parsed as JSON String
      */
-    public String getAllComponentsJson(CallRequestDTO callRequestDTO) throws JsonProcessingException {
+    private String getAllComponentsJson(CallRequestDTO callRequestDTO) throws JsonProcessingException {
         ArrayList<CelestialBody> celestialBodies = (ArrayList<CelestialBody>) productService.getAllComponents();
         ComponentDetailDTO response = new ComponentDetailDTO(callRequestDTO.getRequestID(),celestialBodies);
         return objectMapper.writeValueAsString(response);
     }
 
     /**
-     * Helper Method to create and fill the correct response DTO and converts it to JSON String.
+     * Helper Method to create and fill the correct response DTO.
      *
      * @param callRequestDTO {@link com.kbertv.productService.model.dto.CallRequestDTO}
      * @return {@link com.kbertv.productService.model.dto.ProductDetailDTO} as JSON String
-     * @throws JsonProcessingException if the DTO could not be parsed as JSON String
      */
-    public String getAllProductsJson(CallRequestDTO callRequestDTO) throws JsonProcessingException {
+    private ProductDetailDTO getAllProducts(CallRequestDTO callRequestDTO) {
         ArrayList<PlanetarySystem> planetarySystems = (ArrayList<PlanetarySystem>) productService.getAllProducts();
-        ProductDetailDTO response = new ProductDetailDTO(callRequestDTO.getRequestID(),planetarySystems);
-        return objectMapper.writeValueAsString(response);
+        return new ProductDetailDTO(callRequestDTO.getRequestID(),planetarySystems);
     }
 
     /**
@@ -112,7 +184,7 @@ public class Receiver {
      * @return {@link com.kbertv.productService.model.dto.ComponentDetailDTO} as JSON String
      * @throws JsonProcessingException if the DTO could not be parsed as JSON String
      */
-    public String getComponentJson(CallRequestDTO callRequestDTO) throws JsonProcessingException {
+    private String getComponentJson(CallRequestDTO callRequestDTO) throws JsonProcessingException {
         Optional<CelestialBody> result = productService.getComponent(callRequestDTO.getDetailID());
         ArrayList<CelestialBody> celestialBodies = new ArrayList<>();
         result.ifPresent(celestialBodies::add);
@@ -121,17 +193,15 @@ public class Receiver {
     }
 
     /**
-     * Helper Method to create and fill the correct response DTO and converts it to JSON String.
+     * Helper Method to create and fill the correct response DTO.
      *
      * @param callRequestDTO {@link com.kbertv.productService.model.dto.CallRequestDTO}
      * @return {@link com.kbertv.productService.model.dto.ProductDetailDTO} as JSON String
-     * @throws JsonProcessingException if the DTO could not be parsed as JSON String
      */
-    public String getProductJson(CallRequestDTO callRequestDTO) throws JsonProcessingException {
+    private ProductDetailDTO getProduct(CallRequestDTO callRequestDTO) {
         Optional<PlanetarySystem> result = productService.getProduct(callRequestDTO.getDetailID());
         ArrayList<PlanetarySystem> planetarySystems = new ArrayList<>();
         result.ifPresent(planetarySystems::add);
-        ProductDetailDTO response = new ProductDetailDTO(callRequestDTO.getRequestID(),planetarySystems);
-        return objectMapper.writeValueAsString(response);
+        return new ProductDetailDTO(callRequestDTO.getRequestID(),planetarySystems);
     }
 }

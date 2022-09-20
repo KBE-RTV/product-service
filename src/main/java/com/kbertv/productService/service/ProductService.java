@@ -40,10 +40,9 @@ public class ProductService implements IProductService{
     }
 
     @Override
-    public PlanetarySystem createPlanetarySystem(String name, String owner, ArrayList<CelestialBody> celestialBodies, float price) {
+    public PlanetarySystem createPlanetarySystem(String name, String owner, ArrayList<CelestialBody> celestialBodies) {
         if (isCompositionCorrect(celestialBodies)){
-            //TODO add PlanetarySystem with price ONLY to Cache via @CachePut
-            return planetarySystemRepository.save(new PlanetarySystem(UUID.randomUUID(),name ,owner, celestialBodies,price));
+            return planetarySystemRepository.save(new PlanetarySystem(UUID.randomUUID(),name ,owner, celestialBodies,-1f));
         }else{
             return null;
         }

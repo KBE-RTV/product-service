@@ -14,11 +14,11 @@ import java.util.UUID;
 @ToString
 public class ProductDetailDTO {
     private UUID requestID;
-    private ArrayList<PlanetarySystem> planetarySystem;
+    private ArrayList<PlanetarySystem> planetarySystems;
 
     public ProductDetailDTO(@JsonProperty("requestID") UUID requestID,
-                            @JsonProperty("planetarySystem") ArrayList<PlanetarySystem> planetarySystem){
+                            @JsonProperty("planetarySystem") ArrayList<PlanetarySystem> planetarySystems){
         this.requestID = requestID;
-        this.planetarySystem = planetarySystem;
+        this.planetarySystems = planetarySystems;
     }
 }

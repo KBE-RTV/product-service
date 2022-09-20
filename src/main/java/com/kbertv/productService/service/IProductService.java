@@ -22,10 +22,9 @@ public interface IProductService {
      * @param name            Name of the System
      * @param owner           Name of the Owner
      * @param celestialBodies Celestial Bodies of the System
-     * @param price           Price of the System
      * @return the created planetary system
      */
-    PlanetarySystem createPlanetarySystem(String name, String owner, ArrayList<CelestialBody> celestialBodies, float price);
+    PlanetarySystem createPlanetarySystem(String name, String owner, ArrayList<CelestialBody> celestialBodies);
 
     /**
      * Gets all Products form the DB
