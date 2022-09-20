@@ -1,4 +1,4 @@
-package com.kbertv.productService.model.DTO;
+package com.kbertv.productService.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;

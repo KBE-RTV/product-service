@@ -2,7 +2,6 @@ package com.kbertv.productService.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kbertv.productService.client.ResponseProducer;
 import com.kbertv.productService.model.CelestialBody;
 import com.kbertv.productService.model.PlanetarySystem;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +16,9 @@ import org.springframework.web.client.RestTemplate;
 import javax.annotation.PreDestroy;
 import java.util.*;
 
+/**
+ * Service with provides the functionality of the Product Service
+ */
 @Service
 @Slf4j
 public class ProductService implements IProductService{
@@ -26,7 +28,13 @@ public class ProductService implements IProductService{
     @Value("${warehouse.baseurl}")
     private String warehouseBaseurl;
 
-    public ProductService(CelestialBodyRepository celestialBodyRepository, PlanetarySystemRepository planetarySystemRepository, ResponseProducer responseProducer) {
+    /**
+     * Instantiates a new Product service.
+     *
+     * @param celestialBodyRepository   the celestial body repository
+     * @param planetarySystemRepository the planetary system repository
+     */
+    public ProductService(CelestialBodyRepository celestialBodyRepository, PlanetarySystemRepository planetarySystemRepository) {
         this.celestialBodyRepository = celestialBodyRepository;
         this.planetarySystemRepository = planetarySystemRepository;
     }
@@ -42,7 +50,7 @@ public class ProductService implements IProductService{
     }
 
     @Override
-    @Cacheable(value = "allProductsCache")
+    @Cacheable(value = "productsCache")
     public  List<PlanetarySystem> getAllProducts() {
         return planetarySystemRepository.findAll();
     }
@@ -54,7 +62,7 @@ public class ProductService implements IProductService{
     }
 
     @Override
-    @Cacheable(value = "allComponentsCache")
+    @Cacheable(value = "componentCache")
     public List<CelestialBody> getAllComponents() {
         return celestialBodyRepository.findAll();
     }
@@ -110,6 +118,9 @@ public class ProductService implements IProductService{
         }
     }
 
+    /**
+     * mirrors the Product Service DB to the Warehouse DB
+     */
     @PreDestroy
     public void saveInventoryToWarehouse(){
         RestTemplate restTemplate = new RestTemplate();

@@ -13,6 +13,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 
+/**
+ * Configuration for RabbitMQ
+ */
 @Configuration
 public class RabbitMQConfig {
 
@@ -22,7 +25,6 @@ public class RabbitMQConfig {
     private String callQueue;
     @Value("${rabbitmq.routing.call.key}")
     private String callRoutingKey;
-
     public static TopicExchange exchange;
 
     @Autowired
@@ -40,16 +42,34 @@ public class RabbitMQConfig {
         return new TopicExchange(topicExchangeName);
     }
 
+    /**
+     * Binds the queue to the exchange with a routing key
+     *
+     * @param queue   queue to bind
+     * @param exchange exchange to bind to
+     * @return binding
+     */
     @Bean
     Binding binding(Queue queue, TopicExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange).with(callRoutingKey);
     }
 
+    /**
+     * Gets an Jackson2JsonMessageConverter
+     *
+     * @return Jackson2JsonMessageConverter
+     */
     @Bean
     public Jackson2JsonMessageConverter producerMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }
 
+    /**
+     * Creates a RabbitMQ Template and connects the message converter to it
+     *
+     * @param connectionFactory connection factory
+     * @return rabbit template
+     */
     @Bean
     public RabbitTemplate rabbitTemplate(final ConnectionFactory connectionFactory) {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);

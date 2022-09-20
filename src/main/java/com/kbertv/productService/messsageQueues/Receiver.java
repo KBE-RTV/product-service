@@ -1,12 +1,12 @@
-package com.kbertv.productService.client;
+package com.kbertv.productService.messsageQueues;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kbertv.productService.model.CelestialBody;
-import com.kbertv.productService.model.DTO.CallCreateDTO;
-import com.kbertv.productService.model.DTO.CallRequestDTO;
-import com.kbertv.productService.model.DTO.ComponentDetailDTO;
-import com.kbertv.productService.model.DTO.ProductDetailDTO;
+import com.kbertv.productService.model.dto.CallCreateDTO;
+import com.kbertv.productService.model.dto.CallRequestDTO;
+import com.kbertv.productService.model.dto.ComponentDetailDTO;
+import com.kbertv.productService.model.dto.ProductDetailDTO;
 import com.kbertv.productService.model.PlanetarySystem;
 import com.kbertv.productService.service.ProductService;
 import lombok.extern.slf4j.Slf4j;
@@ -16,35 +16,49 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Optional;
 
+/**
+ * Class wich receives messages form the queue
+ */
 @Service
 @Slf4j
-public class CallConsumer {
+public class Receiver {
 
     private ObjectMapper objectMapper;
     private ProductService productService;
-    private ResponseProducer responseProducer;
+    private Sender sender;
 
-    public CallConsumer(ProductService productService, ResponseProducer responseProducer) {
+    /**
+     * Instantiates a new Receiver.
+     *
+     * @param productService the product service
+     * @param sender         the sender
+     */
+    public Receiver(ProductService productService, Sender sender) {
         this.productService = productService;
-        this.responseProducer = responseProducer;
+        this.sender = sender;
     }
 
+    /**
+     * Process messages from gateway and sends responses.
+     *
+     * @param jsonMessage Messages in JSON format
+     */
     @RabbitListener(queues = {"${rabbitmq.queue.call.name}"})
     public void consumeCallFromGateWay(String jsonMessage) {
         objectMapper = new ObjectMapper();
         try {
             CallRequestDTO callRequestDTO = objectMapper.readValue(jsonMessage, CallRequestDTO.class);
             if (callRequestDTO.getType().equals("product") && callRequestDTO.getDetailID() !=null){
-                responseProducer.sendResponseToGateWay(getProductJson(callRequestDTO));
+                sender.sendResponseToGateWay(getProductJson(callRequestDTO));
             }
             if (callRequestDTO.getType().equals("component") && callRequestDTO.getDetailID() !=null){
-                responseProducer.sendResponseToGateWay(getComponentJson(callRequestDTO));
+                sender.sendResponseToGateWay(getComponentJson(callRequestDTO));
             }
             if(callRequestDTO.getType().equals("component") && callRequestDTO.getDetailID() ==null){
-                responseProducer.sendResponseToGateWay(getAllComponentsJson(callRequestDTO));
+                sender.sendResponseToGateWay(getAllComponentsJson(callRequestDTO));
             }
             if(callRequestDTO.getType().equals("product") && callRequestDTO.getDetailID() ==null){
-                responseProducer.sendResponseToGateWay(getAllProductsJson(callRequestDTO));
+                sender.sendResponseToGateWay(getAllProductsJson(callRequestDTO));
             }
             log.info("Received and processed message: " + jsonMessage);
         }catch (Exception e){
@@ -65,18 +79,39 @@ public class CallConsumer {
     }
      */
 
+    /**
+     * Helper Method to create and fill the correct response DTO and converts it to JSON String.
+     *
+     * @param callRequestDTO {@link com.kbertv.productService.model.dto.CallRequestDTO}
+     * @return {@link com.kbertv.productService.model.dto.ComponentDetailDTO} as JSON String
+     * @throws JsonProcessingException if the DTO could not be parsed as JSON String
+     */
     public String getAllComponentsJson(CallRequestDTO callRequestDTO) throws JsonProcessingException {
         ArrayList<CelestialBody> celestialBodies = (ArrayList<CelestialBody>) productService.getAllComponents();
         ComponentDetailDTO response = new ComponentDetailDTO(callRequestDTO.getRequestID(),celestialBodies);
         return objectMapper.writeValueAsString(response);
     }
 
+    /**
+     * Helper Method to create and fill the correct response DTO and converts it to JSON String.
+     *
+     * @param callRequestDTO {@link com.kbertv.productService.model.dto.CallRequestDTO}
+     * @return {@link com.kbertv.productService.model.dto.ProductDetailDTO} as JSON String
+     * @throws JsonProcessingException if the DTO could not be parsed as JSON String
+     */
     public String getAllProductsJson(CallRequestDTO callRequestDTO) throws JsonProcessingException {
         ArrayList<PlanetarySystem> planetarySystems = (ArrayList<PlanetarySystem>) productService.getAllProducts();
         ProductDetailDTO response = new ProductDetailDTO(callRequestDTO.getRequestID(),planetarySystems);
         return objectMapper.writeValueAsString(response);
     }
 
+    /**
+     * Helper Method to create and fill the correct response DTO and converts it to JSON String.
+     *
+     * @param callRequestDTO {@link com.kbertv.productService.model.dto.CallRequestDTO}
+     * @return {@link com.kbertv.productService.model.dto.ComponentDetailDTO} as JSON String
+     * @throws JsonProcessingException if the DTO could not be parsed as JSON String
+     */
     public String getComponentJson(CallRequestDTO callRequestDTO) throws JsonProcessingException {
         Optional<CelestialBody> result = productService.getComponent(callRequestDTO.getDetailID());
         ArrayList<CelestialBody> celestialBodies = new ArrayList<>();
@@ -85,6 +120,13 @@ public class CallConsumer {
         return objectMapper.writeValueAsString(response);
     }
 
+    /**
+     * Helper Method to create and fill the correct response DTO and converts it to JSON String.
+     *
+     * @param callRequestDTO {@link com.kbertv.productService.model.dto.CallRequestDTO}
+     * @return {@link com.kbertv.productService.model.dto.ProductDetailDTO} as JSON String
+     * @throws JsonProcessingException if the DTO could not be parsed as JSON String
+     */
     public String getProductJson(CallRequestDTO callRequestDTO) throws JsonProcessingException {
         Optional<PlanetarySystem> result = productService.getProduct(callRequestDTO.getDetailID());
         ArrayList<PlanetarySystem> planetarySystems = new ArrayList<>();
