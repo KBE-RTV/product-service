@@ -23,9 +23,7 @@ import redis.embedded.RedisServer;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -65,7 +63,7 @@ public class ProductServiceCachingIntegrationTest {
         assertThat(itemCacheHit.orElseThrow()).isEqualTo(celestialBody);
 
         verify(mockCelestialBodyRepository, times(1)).findById(testID);
-        assertThat(componentFromCache()).isEqualTo(celestialBody);
+        assertThat(componentFromCache(testID)).isEqualTo(celestialBody);
     }
 
     @Test
@@ -83,7 +81,7 @@ public class ProductServiceCachingIntegrationTest {
         assertThat(itemCacheHit.orElseThrow()).isEqualTo(planetarySystem);
 
         verify(mockPlanetarySystemRepository, times(1)).findById(testID);
-        assertThat(productFromCache()).isEqualTo(planetarySystem);
+        assertThat(productFromCache(testID)).isEqualTo(planetarySystem);
     }
 
     @TestConfiguration
@@ -106,10 +104,10 @@ public class ProductServiceCachingIntegrationTest {
         }
     }
 
-    private Object componentFromCache() {
-        return Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("componentCache")).get(UUID.fromString("e0225629-05de-40fc-a29e-5c88e0c4c73c"))).get();
+    private Object componentFromCache(Object key) {
+        return Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("componentCache")).get(key)).get();
     }
-    private Object productFromCache() {
-        return Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("productCache")).get(UUID.fromString("9708b2f4-98d6-4891-b59e-52da0a484fc5"))).get();
+    private Object productFromCache(Object key) {
+        return Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("productCache")).get(key)).get();
     }
 }

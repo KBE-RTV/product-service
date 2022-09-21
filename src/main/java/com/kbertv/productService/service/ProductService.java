@@ -42,14 +42,13 @@ public class ProductService implements IProductService{
     @Override
     public PlanetarySystem createPlanetarySystem(String name, String owner, ArrayList<CelestialBody> celestialBodies) {
         if (isCompositionCorrect(celestialBodies)){
-            return planetarySystemRepository.save(new PlanetarySystem(UUID.randomUUID(),name ,owner, celestialBodies,-1f));
+            return planetarySystemRepository.save(new PlanetarySystem(UUID.randomUUID(),name ,owner, celestialBodies,0f));
         }else{
             return null;
         }
     }
 
     @Override
-    @Cacheable(value = "productsCache")
     public  List<PlanetarySystem> getAllProducts() {
         return planetarySystemRepository.findAll();
     }
@@ -61,7 +60,6 @@ public class ProductService implements IProductService{
     }
 
     @Override
-    @Cacheable(value = "componentCache")
     public List<CelestialBody> getAllComponents() {
         return celestialBodyRepository.findAll();
     }

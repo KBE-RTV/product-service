@@ -23,8 +23,12 @@ public class RabbitMQConfig {
     private String topicExchangeName;
     @Value("${rabbitmq.queue.call.name}")
     private String callQueue;
-    @Value("${rabbitmq.routing.call.key}")
+    @Value("${rabbitmq.queue.call.key}")
     private String callRoutingKey;
+    @Value("${rabbitmq.queue.response.name}")
+    private String responseQueue;
+    @Value("${rabbitmq.queue.response.key}")
+    private String responseRoutingKey;
     public static TopicExchange exchange;
 
     @Autowired
@@ -38,20 +42,31 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    Queue responseQueue() {
+        return new Queue(responseQueue, false);
+    }
+
+    @Bean
     TopicExchange exchange() {
         return new TopicExchange(topicExchangeName);
     }
 
     /**
-     * Binds the queue to the exchange with a routing key
-     *
-     * @param queue   queue to bind
-     * @param exchange exchange to bind to
+     * Binds the call queue to the exchange with the call RoutingKey
      * @return binding
      */
     @Bean
-    Binding binding(Queue queue, TopicExchange exchange) {
-        return BindingBuilder.bind(queue).to(exchange).with(callRoutingKey);
+    Binding binding() {
+        return BindingBuilder.bind(queue()).to(exchange).with(callRoutingKey);
+    }
+
+    /**
+     * Binds the response queue to the exchange with the response RoutingKey
+     * @return binding
+     */
+    @Bean
+    Binding responseBinding() {
+        return BindingBuilder.bind(responseQueue()).to(exchange).with(responseRoutingKey);
     }
 
     /**

@@ -15,7 +15,7 @@ public class Sender {
 
     @Value("${rabbitmq.exchange.name}")
     private String exchange;
-    @Value("${rabbitmq.routing.response.key}")
+    @Value("${rabbitmq.queue.response.key}")
     private String responseRoutingKey;
     @Value("${rabbitmq.queue.call.price.key}")
     private String priceServiceCallRoutingKey;
@@ -43,6 +43,6 @@ public class Sender {
      */
     public void sendCallToPriceService(String jsonCall){
         rabbitTemplate.convertAndSend(exchange,priceServiceCallRoutingKey,jsonCall);
-        log.info("Send Message to "+exchange +" with " +responseRoutingKey +": " + jsonCall);
+        log.info("Send Message to "+exchange +" with " +priceServiceCallRoutingKey +": " + jsonCall);
     }
 }

@@ -98,7 +98,7 @@ public class Receiver {
         ArrayList<PlanetarySystem> planetarySystems = productDetailDTO.getPlanetarySystems();
         boolean flag = true;
         for (PlanetarySystem planetarySystem : planetarySystems) {
-            if (planetarySystem.getPrice() == -1f) {
+            if (planetarySystem.getPrice() == 0) {
                 flag = false;
                 break;
             }
@@ -111,7 +111,7 @@ public class Receiver {
      * Forwards all messages to the Gateway and caches them
      * @param jsonMessage Message
      */
-    @RabbitListener(queues = {"${rabbitmq.queue.call.price.name}"})
+    @RabbitListener(queues = {"${rabbitmq.queue.response.price.name}"})
     public void consumeCallFromPriceService(String jsonMessage) {
         ProductDetailDTO productDetailDTO;
         try {
