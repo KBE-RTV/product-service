@@ -11,7 +11,6 @@ import com.kbertv.productService.model.dto.PlanetarySystemDetailDTO;
 import com.kbertv.productService.service.IProductService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -48,47 +47,48 @@ public class Receiver {
         objectMapper = new ObjectMapper();
         try {
             CallRequestDTO callRequestDTO = objectMapper.readValue(jsonMessage, CallRequestDTO.class);
-            if (callRequestDTO.isRequestTypePlanetarySystem()){
+            if (callRequestDTO.isRequestTypePlanetarySystem()) {
                 PlanetarySystemDetailDTO planetarySystemDetailDTO = getDTOPlanetarySystem(callRequestDTO);
-                if (planetarySystemDetailDTO.isPriceCalculated()){
+                if (planetarySystemDetailDTO.isPriceCalculated()) {
                     sender.sendResponseToGateWay(objectMapper.writeValueAsString(planetarySystemDetailDTO));
-                }else{
+                } else {
                     sender.sendCallToPriceService(objectMapper.writeValueAsString(planetarySystemDetailDTO));
                 }
             }
-            if (callRequestDTO.isRequestTypeCelestialBody()){
+            if (callRequestDTO.isRequestTypeCelestialBody()) {
                 sender.sendResponseToGateWay(getDTOCelestialBodyAsJson(callRequestDTO));
             }
-            if(callRequestDTO.isRequestTypeAllCelestialBodies()){
+            if (callRequestDTO.isRequestTypeAllCelestialBodies()) {
                 sender.sendResponseToGateWay(getDTOAllCelestialBodiesAsJson(callRequestDTO));
             }
-            if(callRequestDTO.isRequestTypeAllPlanetarySystems()){
+            if (callRequestDTO.isRequestTypeAllPlanetarySystems()) {
                 PlanetarySystemDetailDTO planetarySystemDetailDTO = getDTOAllPlanetarySystems(callRequestDTO);
-                if (planetarySystemDetailDTO.isPriceCalculated()){
+                if (planetarySystemDetailDTO.isPriceCalculated()) {
                     sender.sendResponseToGateWay(objectMapper.writeValueAsString(planetarySystemDetailDTO));
-                }else{
+                } else {
                     sender.sendCallToPriceService(objectMapper.writeValueAsString(planetarySystemDetailDTO));
                 }
             }
             log.info("Received and processed message: " + jsonMessage);
-        }catch (Exception e){
+        } catch (Exception e) {
             try {
                 CallCreateDTO callCreateDTO = objectMapper.readValue(jsonMessage, CallCreateDTO.class);
                 PlanetarySystemDetailDTO planetarySystemDetailDTO = createPlanetarySystem(callCreateDTO);
-                if (planetarySystemDetailDTO.isPriceCalculated()){
+                if (planetarySystemDetailDTO.isPriceCalculated()) {
                     sender.sendResponseToGateWay(objectMapper.writeValueAsString(planetarySystemDetailDTO));
-                }else{
+                } else {
                     sender.sendCallToPriceService(objectMapper.writeValueAsString(planetarySystemDetailDTO));
                 }
                 log.info("Received and processed message: " + jsonMessage);
-            }catch (Exception f){
-                log.error("Message could not be parsed: "+jsonMessage +System.lineSeparator() +f +System.lineSeparator()+e);
+            } catch (Exception f) {
+                log.error("Message could not be parsed: " + jsonMessage + System.lineSeparator() + f + System.lineSeparator() + e);
             }
         }
     }
 
     /**
      * Forwards all messages to the Gateway and caches them
+     *
      * @param jsonMessage Message
      */
     @RabbitListener(queues = {"${rabbitmq.queue.response.price.name}"})
@@ -96,11 +96,11 @@ public class Receiver {
         PlanetarySystemDetailDTO planetarySystemDetailDTO;
         try {
             planetarySystemDetailDTO = objectMapper.readValue(jsonMessage, PlanetarySystemDetailDTO.class);
-            for (PlanetarySystem planetarySystem:planetarySystemDetailDTO.getPlanetarySystems()){
+            for (PlanetarySystem planetarySystem : planetarySystemDetailDTO.getPlanetarySystems()) {
                 productService.cachePlanetarySystem(planetarySystem);
             }
-        }catch (Exception e){
-            log.error("Message could not be parsed: "+jsonMessage +System.lineSeparator() +e);
+        } catch (Exception e) {
+            log.error("Message could not be parsed: " + jsonMessage + System.lineSeparator() + e);
         }
         sender.sendResponseToGateWay(jsonMessage);
         log.info("Received and processed message: " + jsonMessage);
@@ -108,16 +108,17 @@ public class Receiver {
 
     /**
      * Helper Method to create {@link com.kbertv.productService.model.PlanetarySystem}
+     *
      * @param callCreateDTO {@link com.kbertv.productService.model.dto.CallCreateDTO}
      * @return {@link PlanetarySystemDetailDTO}
      */
     private PlanetarySystemDetailDTO createPlanetarySystem(CallCreateDTO callCreateDTO) {
         PlanetarySystem planetarySystem = productService.savePlanetarySystem(callCreateDTO.getPlanetarySystem());
         ArrayList<PlanetarySystem> planetarySystems = new ArrayList<>();
-        if (planetarySystem != null){
+        if (planetarySystem != null) {
             planetarySystems.add(planetarySystem);
         }
-        return new PlanetarySystemDetailDTO(callCreateDTO.getRequestID(),planetarySystems);
+        return new PlanetarySystemDetailDTO(callCreateDTO.getRequestID(), planetarySystems);
     }
 
     /**
@@ -140,7 +141,7 @@ public class Receiver {
      */
     private PlanetarySystemDetailDTO getDTOAllPlanetarySystems(CallRequestDTO callRequestDTO) {
         ArrayList<PlanetarySystem> planetarySystems = (ArrayList<PlanetarySystem>) productService.getAllPlanetarySystems();
-        return new PlanetarySystemDetailDTO(callRequestDTO.getRequestID(),planetarySystems);
+        return new PlanetarySystemDetailDTO(callRequestDTO.getRequestID(), planetarySystems);
     }
 
     /**
@@ -153,7 +154,7 @@ public class Receiver {
     private String getDTOCelestialBodyAsJson(CallRequestDTO callRequestDTO) throws JsonProcessingException {
         ArrayList<CelestialBody> celestialBodies = new ArrayList<>();
         productService.getCelestialBody(callRequestDTO.getDetailID()).ifPresent(celestialBodies::add);
-        CelestialBodyDetailDTO response = new CelestialBodyDetailDTO(callRequestDTO.getRequestID(),celestialBodies);
+        CelestialBodyDetailDTO response = new CelestialBodyDetailDTO(callRequestDTO.getRequestID(), celestialBodies);
         return objectMapper.writeValueAsString(response);
     }
 
@@ -166,6 +167,6 @@ public class Receiver {
     private PlanetarySystemDetailDTO getDTOPlanetarySystem(CallRequestDTO callRequestDTO) {
         ArrayList<PlanetarySystem> planetarySystems = new ArrayList<>();
         productService.getPlanetarySystem(callRequestDTO.getDetailID()).ifPresent(planetarySystems::add);
-        return new PlanetarySystemDetailDTO(callRequestDTO.getRequestID(),planetarySystems);
+        return new PlanetarySystemDetailDTO(callRequestDTO.getRequestID(), planetarySystems);
     }
 }

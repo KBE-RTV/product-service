@@ -31,9 +31,9 @@ public class Sender {
      *
      * @param jsonResponse message in JSON format
      */
-    public void sendResponseToGateWay(String jsonResponse){
+    public void sendResponseToGateWay(String jsonResponse) {
         rabbitTemplate.convertAndSend(exchange, responseRoutingKey, jsonResponse);
-        log.info("Send Message to "+exchange +" with " +responseRoutingKey +": " + jsonResponse);
+        log.info("Send Message to " + exchange + " with " + responseRoutingKey + ": " + jsonResponse);
     }
 
     /**
@@ -41,8 +41,8 @@ public class Sender {
      *
      * @param jsonCall request dto
      */
-    public void sendCallToPriceService(String jsonCall){
-        rabbitTemplate.convertAndSend(exchange,priceServiceCallRoutingKey,jsonCall);
-        log.info("Send Message to "+exchange +" with " +priceServiceCallRoutingKey +": " + jsonCall);
+    public void sendCallToPriceService(String jsonCall) {
+        rabbitTemplate.convertAndSend(exchange, priceServiceCallRoutingKey, jsonCall);
+        log.info("Send Message to " + exchange + " with " + priceServiceCallRoutingKey + ": " + jsonCall);
     }
 }

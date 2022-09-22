@@ -23,14 +23,16 @@ import redis.embedded.RedisServer;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.util.*;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@Import({ RedisCacheConfig.class, ProductService.class})
+@Import({RedisCacheConfig.class, ProductService.class})
 @ExtendWith(SpringExtension.class)
 @EnableCaching
 @ImportAutoConfiguration(classes = {
@@ -85,7 +87,7 @@ public class ProductServiceCachingIntegrationTest {
     }
 
     @Test
-    void givenRedisCachingWhenPlanetarySystemCachedThenFoundInCache(){
+    void givenRedisCachingWhenPlanetarySystemCachedThenFoundInCache() {
         UUID testID = UUID.fromString("1579d9da-e4ab-4992-b1da-6a42b35eb5c7");
         PlanetarySystem planetarySystem = new PlanetarySystem();
         planetarySystem.setId(testID);
@@ -93,6 +95,14 @@ public class ProductServiceCachingIntegrationTest {
         productService.cachePlanetarySystem(planetarySystem);
 
         assertThat(planetarySystemFromCache(testID)).isEqualTo(planetarySystem);
+    }
+
+    private Object celestialBodyFromCache(Object key) {
+        return Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("celestialBodyCache")).get(key)).get();
+    }
+
+    private Object planetarySystemFromCache(Object key) {
+        return Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("planetarySystemCache")).get(key)).get();
     }
 
     @TestConfiguration
@@ -113,12 +123,5 @@ public class ProductServiceCachingIntegrationTest {
         public void stopRedis() {
             this.redisServer.stop();
         }
-    }
-
-    private Object celestialBodyFromCache(Object key) {
-        return Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("celestialBodyCache")).get(key)).get();
-    }
-    private Object planetarySystemFromCache(Object key) {
-        return Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("planetarySystemCache")).get(key)).get();
     }
 }

@@ -53,6 +53,7 @@ public class RabbitMQConfig {
 
     /**
      * Binds the call queue to the exchange with the call RoutingKey
+     *
      * @return binding
      */
     @Bean
@@ -62,6 +63,7 @@ public class RabbitMQConfig {
 
     /**
      * Binds the response queue to the exchange with the response RoutingKey
+     *
      * @return binding
      */
     @Bean

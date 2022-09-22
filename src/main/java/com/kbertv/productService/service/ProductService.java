@@ -23,7 +23,7 @@ import java.util.*;
  */
 @Service
 @Slf4j
-public class ProductService implements IProductService{
+public class ProductService implements IProductService {
 
     private final CelestialBodyRepository celestialBodyRepository;
     private final PlanetarySystemRepository planetarySystemRepository;
@@ -46,24 +46,24 @@ public class ProductService implements IProductService{
     @Override
     public void cachePlanetarySystem(PlanetarySystem planetarySystem) {
         try {
-            cacheManager.getCache("planetarySystemCache").putIfAbsent(planetarySystem.getId(),planetarySystem);
-        }catch (NullPointerException ignored){
+            cacheManager.getCache("planetarySystemCache").putIfAbsent(planetarySystem.getId(), planetarySystem);
+        } catch (NullPointerException ignored) {
 
         }
     }
 
     @Override
     public PlanetarySystem savePlanetarySystem(PlanetarySystem planetarySystem) {
-        if (isCompositionCorrect(planetarySystem.getCelestialBodies())){
+        if (isCompositionCorrect(planetarySystem.getCelestialBodies())) {
             cachePlanetarySystem(planetarySystem);
             return planetarySystemRepository.save(planetarySystem);
-        }else{
+        } else {
             return null;
         }
     }
 
     @Override
-    public  List<PlanetarySystem> getAllPlanetarySystems() {
+    public List<PlanetarySystem> getAllPlanetarySystems() {
         return planetarySystemRepository.findAll();
     }
 
@@ -85,21 +85,21 @@ public class ProductService implements IProductService{
     }
 
     private boolean isCompositionCorrect(ArrayList<CelestialBody> celestialBodies) {
-        if (celestialBodies.isEmpty()){
+        if (celestialBodies.isEmpty()) {
             return false;
-        }else{
+        } else {
             return celestialBodies.get(0).getType().equals("sun");
         }
     }
 
     @Override
     @EventListener(ApplicationReadyEvent.class)
-    public void getInventoryFromWarehouse(){
+    public void getInventoryFromWarehouse() {
         getCelestialBodiesFromWarehouse();
         getPlanetarySystemsFromWarehouse();
     }
 
-    private void getCelestialBodiesFromWarehouse(){
+    private void getCelestialBodiesFromWarehouse() {
         RestTemplate restTemplate = new RestTemplate();
         final ObjectMapper objectMapper = new ObjectMapper();
         try {
@@ -107,14 +107,14 @@ public class ProductService implements IProductService{
             CelestialBody[] celestialBodies = objectMapper.readValue(celestialBodyJSON, CelestialBody[].class);
             celestialBodyRepository.saveAll(Arrays.asList(celestialBodies));
             log.info("Celestial Bodies imported");
-        }catch (RestClientException e){
+        } catch (RestClientException e) {
             log.error("Warehouse not reachable: " + e.getMessage());
         } catch (JsonProcessingException e) {
-            log.error("Import failed: "+ e.getMessage());
+            log.error("Import failed: " + e.getMessage());
         }
     }
 
-    private void getPlanetarySystemsFromWarehouse(){
+    private void getPlanetarySystemsFromWarehouse() {
         RestTemplate restTemplate = new RestTemplate();
         final ObjectMapper objectMapper = new ObjectMapper();
         try {
@@ -122,10 +122,10 @@ public class ProductService implements IProductService{
             PlanetarySystem[] planetarySystems = objectMapper.readValue(planetarySystemsJSON, PlanetarySystem[].class);
             planetarySystemRepository.saveAll(Arrays.asList(planetarySystems));
             log.info("Planetary Systems imported");
-        }catch (RestClientException e){
+        } catch (RestClientException e) {
             log.error("Warehouse not reachable: " + e.getMessage());
         } catch (JsonProcessingException e) {
-            log.error("Import failed: "+ e.getMessage());
+            log.error("Import failed: " + e.getMessage());
         }
     }
 
@@ -133,11 +133,11 @@ public class ProductService implements IProductService{
      * mirrors the Product Service DB to the Warehouse DB
      */
     @PreDestroy
-    public void saveInventoryToWarehouse(){
+    public void saveInventoryToWarehouse() {
         RestTemplate restTemplate = new RestTemplate();
         String url = warehouseBaseurl + "planetarySystems";
         ArrayList<PlanetarySystem> planetarySystems = (ArrayList<PlanetarySystem>) planetarySystemRepository.findAll();
         planetarySystems.forEach((planetarySystem -> planetarySystem.setPrice(0)));
-        restTemplate.postForObject(url,planetarySystems, ArrayList.class);
+        restTemplate.postForObject(url, planetarySystems, ArrayList.class);
     }
 }

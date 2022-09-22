@@ -16,7 +16,7 @@ public class CallCreateDTO {
     private PlanetarySystem planetarySystem;
 
     public CallCreateDTO(@JsonProperty("requestID") UUID requestID,
-                          @JsonProperty("detailID") PlanetarySystem planetarySystem){
+                         @JsonProperty("detailID") PlanetarySystem planetarySystem) {
         this.requestID = requestID;
         this.planetarySystem = planetarySystem;
     }

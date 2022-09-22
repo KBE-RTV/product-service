@@ -17,25 +17,25 @@ public class CallRequestDTO {
 
     public CallRequestDTO(@JsonProperty("requestID") UUID requestID,
                           @JsonProperty("detailID") UUID detailID,
-                          @JsonProperty("type") String type){
+                          @JsonProperty("type") String type) {
         this.requestID = requestID;
         this.detailID = detailID;
         this.type = type;
     }
 
-    public boolean isRequestTypeAllPlanetarySystems(){
+    public boolean isRequestTypeAllPlanetarySystems() {
         return type.equals("planetarySystem") && detailID == null;
     }
 
-    public boolean isRequestTypePlanetarySystem(){
+    public boolean isRequestTypePlanetarySystem() {
         return type.equals("planetarySystem") && detailID != null;
     }
 
-    public boolean isRequestTypeAllCelestialBodies(){
+    public boolean isRequestTypeAllCelestialBodies() {
         return type.equals("celestialBody") && detailID == null;
     }
 
-    public boolean isRequestTypeCelestialBody(){
+    public boolean isRequestTypeCelestialBody() {
         return type.equals("celestialBody") && detailID != null;
     }
 }

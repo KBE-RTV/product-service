@@ -1,6 +1,8 @@
 package com.kbertv.productService.model;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -11,7 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "components")
-public class CelestialBody implements Serializable{
+public class CelestialBody implements Serializable {
 
     @Id
     private UUID id;

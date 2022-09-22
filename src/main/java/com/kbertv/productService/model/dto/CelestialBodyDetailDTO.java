@@ -17,7 +17,7 @@ public class CelestialBodyDetailDTO {
     private ArrayList<CelestialBody> celestialBody;
 
     public CelestialBodyDetailDTO(@JsonProperty("requestID") UUID requestID,
-                                  @JsonProperty("celestialBody") ArrayList<CelestialBody> celestialBody){
+                                  @JsonProperty("celestialBody") ArrayList<CelestialBody> celestialBody) {
         this.requestID = requestID;
         this.celestialBody = celestialBody;
     }

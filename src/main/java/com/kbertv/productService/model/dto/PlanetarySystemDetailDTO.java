@@ -17,16 +17,17 @@ public class PlanetarySystemDetailDTO {
     private ArrayList<PlanetarySystem> planetarySystems;
 
     public PlanetarySystemDetailDTO(@JsonProperty("requestID") UUID requestID,
-                                    @JsonProperty("planetarySystem") ArrayList<PlanetarySystem> planetarySystems){
+                                    @JsonProperty("planetarySystem") ArrayList<PlanetarySystem> planetarySystems) {
         this.requestID = requestID;
         this.planetarySystems = planetarySystems;
     }
 
     /**
      * Helper Method to check if all prices of the request are calculated
+     *
      * @return true if price is calculated, else false
      */
-    public boolean isPriceCalculated(){
+    public boolean isPriceCalculated() {
         boolean flag = true;
         for (PlanetarySystem planetarySystem : planetarySystems) {
             if (planetarySystem.getPrice() == 0) {
