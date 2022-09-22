@@ -12,9 +12,9 @@ services:
       - mongoDB
       - redisCache
     networks:
-      - warehouseCommonNetwork
+      - warehouse_commonNetwork
     environment:
-      - warehouseCommonNetwork=rabbitmq
+      - spring.rabbitm.host=rabbitmq
   mongoDB:
     container_name: mongoDBProductService
     image: 'mongo:4.4.3'
@@ -22,7 +22,7 @@ services:
     ports:
       - "27018:27017"
     networks:
-      - warehouseCommonNetwork
+      - warehouse_commonNetwork
   redisCache:
     container_name: redisCacheProductService
     image: 'redis:7.0.4'
@@ -30,7 +30,7 @@ services:
     ports:
       - "16379:6379"
     networks:
-      - warehouseCommonNetwork
+      - warehouse_commonNetwork
 networks:
-  warehouseCommonNetwork:
+  warehouse_commonNetwork:
     external: true
