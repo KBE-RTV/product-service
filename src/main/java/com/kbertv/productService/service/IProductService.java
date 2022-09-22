@@ -16,14 +16,15 @@ import java.util.UUID;
 public interface IProductService {
 
     /**
-     * Creates a planetary system.
-     *
-     * @param name            Name of the System
-     * @param owner           Name of the Owner
-     * @param celestialBodies Celestial Bodies of the System
-     * @return the created planetary system
+     * Caches planetary system
      */
-    PlanetarySystem createPlanetarySystem(String name, String owner, ArrayList<CelestialBody> celestialBodies);
+    void cachePlanetarySystem(PlanetarySystem planetarySystem);
+
+    /**
+     * Saves a planetary system and caches it.
+     * @return the saved planetary system
+     */
+    PlanetarySystem savePlanetarySystem(PlanetarySystem planetarySystem);
 
     /**
      * Gets all planetary systems from the DB

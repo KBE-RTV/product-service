@@ -96,9 +96,8 @@ public class Receiver {
         PlanetarySystemDetailDTO planetarySystemDetailDTO;
         try {
             planetarySystemDetailDTO = objectMapper.readValue(jsonMessage, PlanetarySystemDetailDTO.class);
-            ArrayList<PlanetarySystem> planetarySystems = planetarySystemDetailDTO.getPlanetarySystems();
-            for (PlanetarySystem planetarySystem:planetarySystems){
-                putPlanetarySystemWithPriceInCache(planetarySystem);
+            for (PlanetarySystem planetarySystem:planetarySystemDetailDTO.getPlanetarySystems()){
+                productService.cachePlanetarySystem(planetarySystem);
             }
         }catch (Exception e){
             log.error("Message could not be parsed: "+jsonMessage +System.lineSeparator() +e);
@@ -108,23 +107,12 @@ public class Receiver {
     }
 
     /**
-     * Helper Method to cache {@link com.kbertv.productService.model.PlanetarySystem}
-     * @param planetarySystem {@link com.kbertv.productService.model.PlanetarySystem}
-     * @return {@link com.kbertv.productService.model.PlanetarySystem}
-     */
-    @CachePut(cacheNames = "productCache", key = "#p0.id")
-    public PlanetarySystem putPlanetarySystemWithPriceInCache(PlanetarySystem planetarySystem){
-        return planetarySystem;
-    }
-
-    /**
      * Helper Method to create {@link com.kbertv.productService.model.PlanetarySystem}
      * @param callCreateDTO {@link com.kbertv.productService.model.dto.CallCreateDTO}
      * @return {@link PlanetarySystemDetailDTO}
      */
     private PlanetarySystemDetailDTO createPlanetarySystem(CallCreateDTO callCreateDTO) {
-        PlanetarySystem callPlanetarySystem = callCreateDTO.getPlanetarySystem();
-        PlanetarySystem planetarySystem = productService.createPlanetarySystem(callPlanetarySystem.getName(),callPlanetarySystem.getOwner(),callPlanetarySystem.getCelestialBodies());
+        PlanetarySystem planetarySystem = productService.savePlanetarySystem(callCreateDTO.getPlanetarySystem());
         ArrayList<PlanetarySystem> planetarySystems = new ArrayList<>();
         if (planetarySystem != null){
             planetarySystems.add(planetarySystem);

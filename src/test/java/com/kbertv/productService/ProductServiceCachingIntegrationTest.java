@@ -84,6 +84,17 @@ public class ProductServiceCachingIntegrationTest {
         assertThat(planetarySystemFromCache(testID)).isEqualTo(planetarySystem);
     }
 
+    @Test
+    void givenRedisCachingWhenPlanetarySystemCachedThenFoundInCache(){
+        UUID testID = UUID.fromString("1579d9da-e4ab-4992-b1da-6a42b35eb5c7");
+        PlanetarySystem planetarySystem = new PlanetarySystem();
+        planetarySystem.setId(testID);
+
+        productService.cachePlanetarySystem(planetarySystem);
+
+        assertThat(planetarySystemFromCache(testID)).isEqualTo(planetarySystem);
+    }
+
     @TestConfiguration
     static class EmbeddedRedisConfiguration {
 

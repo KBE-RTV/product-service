@@ -5,8 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kbertv.productService.model.CelestialBody;
 import com.kbertv.productService.model.PlanetarySystem;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,8 @@ public class ProductService implements IProductService{
     private final PlanetarySystemRepository planetarySystemRepository;
     @Value("${warehouse.baseurl}")
     private String warehouseBaseurl;
+    @Autowired
+    private CacheManager cacheManager;
 
     /**
      * Instantiates a new Product service.
@@ -40,9 +44,19 @@ public class ProductService implements IProductService{
     }
 
     @Override
-    public PlanetarySystem createPlanetarySystem(String name, String owner, ArrayList<CelestialBody> celestialBodies) {
-        if (isCompositionCorrect(celestialBodies)){
-            return planetarySystemRepository.save(new PlanetarySystem(UUID.randomUUID(),name ,owner, celestialBodies,0f));
+    public void cachePlanetarySystem(PlanetarySystem planetarySystem) {
+        try {
+            cacheManager.getCache("planetarySystemCache").putIfAbsent(planetarySystem.getId(),planetarySystem);
+        }catch (NullPointerException ignored){
+
+        }
+    }
+
+    @Override
+    public PlanetarySystem savePlanetarySystem(PlanetarySystem planetarySystem) {
+        if (isCompositionCorrect(planetarySystem.getCelestialBodies())){
+            cachePlanetarySystem(planetarySystem);
+            return planetarySystemRepository.save(planetarySystem);
         }else{
             return null;
         }
