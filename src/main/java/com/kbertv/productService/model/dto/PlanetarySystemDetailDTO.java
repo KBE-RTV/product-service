@@ -1,5 +1,6 @@
 package com.kbertv.productService.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kbertv.productService.model.PlanetarySystem;
 import lombok.Getter;
@@ -15,11 +16,12 @@ import java.util.UUID;
 public class PlanetarySystemDetailDTO {
     private UUID requestID;
     private ArrayList<PlanetarySystem> planetarySystems;
-
+    private boolean priceCalculated;
     public PlanetarySystemDetailDTO(@JsonProperty("requestID") UUID requestID,
-                                    @JsonProperty("planetarySystem") ArrayList<PlanetarySystem> planetarySystems) {
+                                    @JsonProperty("planetarySystems") ArrayList<PlanetarySystem> planetarySystems) {
         this.requestID = requestID;
         this.planetarySystems = planetarySystems;
+        this.priceCalculated = isPriceCalculated();
     }
 
     /**
