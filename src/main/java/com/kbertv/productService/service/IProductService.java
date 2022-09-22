@@ -5,7 +5,6 @@ import com.kbertv.productService.model.PlanetarySystem;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,36 +26,36 @@ public interface IProductService {
     PlanetarySystem createPlanetarySystem(String name, String owner, ArrayList<CelestialBody> celestialBodies);
 
     /**
-     * Gets all Products form the DB
+     * Gets all planetary systems from the DB
      *
-     * @return List of all Products
+     * @return List of all planetary systems
      */
-    List<PlanetarySystem> getAllProducts();
+    List<PlanetarySystem> getAllPlanetarySystems();
 
     /**
-     * Gets a specific Product from the DB
+     * Gets a specific planetary system from the DB
      *
-     * @param id UUID of the Product
-     * @return  Optional with Product if UUID could be found.
+     * @param id UUID of the planetary system
+     * @return  Optional with planetary system if UUID could be found.
      *          Empty Optional if UUID could not be found.
      */
-    Optional<PlanetarySystem> getProduct(UUID id);
+    Optional<PlanetarySystem> getPlanetarySystem(UUID id);
 
     /**
-     * Gets all Components form the DB
+     * Gets all celestial bodies form the DB
      *
-     * @return List of all Components
+     * @return List of all celestial bodies
      */
-    List<CelestialBody> getAllComponents();
+    List<CelestialBody> getAllCelestialBodies();
 
     /**
-     * Gets a specific Component from the DB
+     * Gets a specific celestial body from the DB
      *
-     * @param id UUID of the Component
-     * @return  Optional with Component if UUID could be found.
+     * @param id UUID of the celestial body
+     * @return  Optional with celestial body if UUID could be found.
      *          Empty Optional if UUID could not be found.
      */
-    Optional<CelestialBody> getComponent(UUID id);
+    Optional<CelestialBody> getCelestialBody(UUID id);
 
     /**
      * mirrors the Warehouse DB to the Product Service DB

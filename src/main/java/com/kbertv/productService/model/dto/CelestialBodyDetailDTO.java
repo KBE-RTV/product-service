@@ -12,12 +12,12 @@ import java.util.UUID;
 @Getter
 @Setter
 @ToString
-public class ComponentDetailDTO {
+public class CelestialBodyDetailDTO {
     private UUID requestID;
     private ArrayList<CelestialBody> celestialBody;
 
-    public ComponentDetailDTO(@JsonProperty("requestID") UUID requestID,
-                              @JsonProperty("celestialBody") ArrayList<CelestialBody> celestialBody){
+    public CelestialBodyDetailDTO(@JsonProperty("requestID") UUID requestID,
+                                  @JsonProperty("celestialBody") ArrayList<CelestialBody> celestialBody){
         this.requestID = requestID;
         this.celestialBody = celestialBody;
     }

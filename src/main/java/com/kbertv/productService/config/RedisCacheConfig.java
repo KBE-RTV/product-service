@@ -17,16 +17,16 @@ import java.time.Duration;
 @Configuration
 public class RedisCacheConfig {
     /**
-     * Creates a RedisCacheManagerBuilderCustomizer with two Caches, one for products and one for components, each with a TTL of 10 min.
+     * Creates a RedisCacheManagerBuilderCustomizer with two Caches, one for planetary systems and one for celestial bodies, each with a TTL of 10 min.
      *
      * @return RedisCacheManagerBuilderCustomizer
      */
     @Bean
     public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer() {
         return (builder) -> builder
-                .withCacheConfiguration("productCache",
+                .withCacheConfiguration("planetarySystemCache",
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
-                .withCacheConfiguration("componentCache",
+                .withCacheConfiguration("celestialBodyCache",
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)));
     }
 

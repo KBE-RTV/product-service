@@ -22,4 +22,20 @@ public class CallRequestDTO {
         this.detailID = detailID;
         this.type = type;
     }
+
+    public boolean isRequestTypeAllPlanetarySystems(){
+        return type.equals("planetarySystem") && detailID == null;
+    }
+
+    public boolean isRequestTypePlanetarySystem(){
+        return type.equals("planetarySystem") && detailID != null;
+    }
+
+    public boolean isRequestTypeAllCelestialBodies(){
+        return type.equals("celestialBody") && detailID == null;
+    }
+
+    public boolean isRequestTypeCelestialBody(){
+        return type.equals("celestialBody") && detailID != null;
+    }
 }

@@ -49,39 +49,39 @@ public class ProductServiceCachingIntegrationTest {
     private CacheManager cacheManager;
 
     @Test
-    void givenRedisCachingWhenFindComponentByIdThenComponentReturnedFromCacheTest() {
+    void givenRedisCachingWhenFindCelestialBodyByIdThenCelestialBodyReturnedFromCacheTest() {
         UUID testID = UUID.fromString("e0225629-05de-40fc-a29e-5c88e0c4c73c");
         CelestialBody celestialBody = new CelestialBody();
         celestialBody.setId(testID);
         given(mockCelestialBodyRepository.findById(testID))
                 .willReturn(Optional.of(celestialBody));
 
-        Optional<CelestialBody> itemCacheMiss = productService.getComponent(testID);
-        Optional<CelestialBody> itemCacheHit = productService.getComponent(testID);
+        Optional<CelestialBody> itemCacheMiss = productService.getCelestialBody(testID);
+        Optional<CelestialBody> itemCacheHit = productService.getCelestialBody(testID);
 
         assertThat(itemCacheMiss.orElseThrow()).isEqualTo(celestialBody);
         assertThat(itemCacheHit.orElseThrow()).isEqualTo(celestialBody);
 
         verify(mockCelestialBodyRepository, times(1)).findById(testID);
-        assertThat(componentFromCache(testID)).isEqualTo(celestialBody);
+        assertThat(celestialBodyFromCache(testID)).isEqualTo(celestialBody);
     }
 
     @Test
-    void givenRedisCachingWhenFindProductByIdThenProductReturnedFromCacheTest() {
+    void givenRedisCachingWhenFindPlanetarySystemByIdThenPlanetarySystemReturnedFromCacheTest() {
         UUID testID = UUID.fromString("9708b2f4-98d6-4891-b59e-52da0a484fc5");
         PlanetarySystem planetarySystem = new PlanetarySystem();
         planetarySystem.setId(testID);
         given(mockPlanetarySystemRepository.findById(testID))
                 .willReturn(Optional.of(planetarySystem));
 
-        Optional<PlanetarySystem> itemCacheMiss = productService.getProduct(testID);
-        Optional<PlanetarySystem> itemCacheHit = productService.getProduct(testID);
+        Optional<PlanetarySystem> itemCacheMiss = productService.getPlanetarySystem(testID);
+        Optional<PlanetarySystem> itemCacheHit = productService.getPlanetarySystem(testID);
 
         assertThat(itemCacheMiss.orElseThrow()).isEqualTo(planetarySystem);
         assertThat(itemCacheHit.orElseThrow()).isEqualTo(planetarySystem);
 
         verify(mockPlanetarySystemRepository, times(1)).findById(testID);
-        assertThat(productFromCache(testID)).isEqualTo(planetarySystem);
+        assertThat(planetarySystemFromCache(testID)).isEqualTo(planetarySystem);
     }
 
     @TestConfiguration
@@ -104,10 +104,10 @@ public class ProductServiceCachingIntegrationTest {
         }
     }
 
-    private Object componentFromCache(Object key) {
-        return Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("componentCache")).get(key)).get();
+    private Object celestialBodyFromCache(Object key) {
+        return Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("celestialBodyCache")).get(key)).get();
     }
-    private Object productFromCache(Object key) {
-        return Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("productCache")).get(key)).get();
+    private Object planetarySystemFromCache(Object key) {
+        return Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("planetarySystemCache")).get(key)).get();
     }
 }
