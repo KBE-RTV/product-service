@@ -9,26 +9,28 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      - mongo_db
-      - redis_server
+      - mongoDB
+      - redisCache
     networks:
-      - warehouse_common_network
-  mongo_db:
-    container_name: mongodb_productservice
+      - warehouseCommonNetwork
+    environment:
+      - warehouseCommonNetwork=rabbitmq
+  mongoDB:
+    container_name: mongoDBProductService
     image: 'mongo:4.4.3'
     restart: always
     ports:
       - "27018:27017"
     networks:
-      - warehouse_common_network
-  redis_server:
-    container_name: redis_productservice
+      - warehouseCommonNetwork
+  redisCache:
+    container_name: redisCacheProductService
     image: 'redis:7.0.4'
     restart: always
     ports:
       - "16379:6379"
     networks:
-      - warehouse_common_network
+      - warehouseCommonNetwork
 networks:
-  warehouse_common_network:
+  warehouseCommonNetwork:
     external: true
