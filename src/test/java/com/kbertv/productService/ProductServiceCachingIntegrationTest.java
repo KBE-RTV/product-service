@@ -1,7 +1,8 @@
 package com.kbertv.productService;
 
-import com.kbertv.productService.config.CacheConfig;
+import com.kbertv.productService.config.RedisCacheConfig;
 import com.kbertv.productService.model.CelestialBody;
+import com.kbertv.productService.model.PlanetarySystem;
 import com.kbertv.productService.service.CelestialBodyRepository;
 import com.kbertv.productService.service.IProductService;
 import com.kbertv.productService.service.PlanetarySystemRepository;
@@ -22,6 +23,7 @@ import redis.embedded.RedisServer;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,7 +32,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@Import({ CacheConfig.class, ProductService.class})
+@Import({RedisCacheConfig.class, ProductService.class})
 @ExtendWith(SpringExtension.class)
 @EnableCaching
 @ImportAutoConfiguration(classes = {
@@ -41,31 +43,66 @@ public class ProductServiceCachingIntegrationTest {
 
     @MockBean
     private CelestialBodyRepository mockCelestialBodyRepository;
-
     @MockBean
     private PlanetarySystemRepository mockPlanetarySystemRepository;
-
     @Autowired
     private IProductService productService;
-
     @Autowired
     private CacheManager cacheManager;
 
     @Test
-    void givenRedisCaching_whenFindComponentById_thenComponentReturnedFromCache() {
-        UUID UUID_Body1 = UUID.fromString("9708b2f4-98d6-4891-b59e-52da0a484fc5");
-        CelestialBody celestialBody1 = new CelestialBody(UUID_Body1,"Body1",1,1f, "sun",1,1f,1f,1f,1f,1f,1f,1f);
-        given(mockCelestialBodyRepository.findById(UUID_Body1))
-                .willReturn(Optional.of(celestialBody1));
+    void givenRedisCachingWhenFindCelestialBodyByIdThenCelestialBodyReturnedFromCacheTest() {
+        UUID testID = UUID.fromString("e0225629-05de-40fc-a29e-5c88e0c4c73c");
+        CelestialBody celestialBody = new CelestialBody();
+        celestialBody.setId(testID);
+        given(mockCelestialBodyRepository.findById(testID))
+                .willReturn(Optional.of(celestialBody));
 
-        Optional<CelestialBody> itemCacheMiss = productService.getComponent(UUID_Body1);
-        Optional<CelestialBody> itemCacheHit = productService.getComponent(UUID_Body1);
+        Optional<CelestialBody> itemCacheMiss = productService.getCelestialBody(testID);
+        Optional<CelestialBody> itemCacheHit = productService.getCelestialBody(testID);
 
-        assertThat(itemCacheMiss.get()).isEqualTo(celestialBody1);
-        assertThat(itemCacheHit.get()).isEqualTo(celestialBody1);
+        assertThat(itemCacheMiss.orElseThrow()).isEqualTo(celestialBody);
+        assertThat(itemCacheHit.orElseThrow()).isEqualTo(celestialBody);
 
-        verify(mockCelestialBodyRepository, times(1)).findById(UUID_Body1);
-        assertThat(itemFromCache()).isEqualTo(celestialBody1);
+        verify(mockCelestialBodyRepository, times(1)).findById(testID);
+        assertThat(celestialBodyFromCache(testID)).isEqualTo(celestialBody);
+    }
+
+    @Test
+    void givenRedisCachingWhenFindPlanetarySystemByIdThenPlanetarySystemReturnedFromCacheTest() {
+        UUID testID = UUID.fromString("9708b2f4-98d6-4891-b59e-52da0a484fc5");
+        PlanetarySystem planetarySystem = new PlanetarySystem();
+        planetarySystem.setId(testID);
+        given(mockPlanetarySystemRepository.findById(testID))
+                .willReturn(Optional.of(planetarySystem));
+
+        Optional<PlanetarySystem> itemCacheMiss = productService.getPlanetarySystem(testID);
+        Optional<PlanetarySystem> itemCacheHit = productService.getPlanetarySystem(testID);
+
+        assertThat(itemCacheMiss.orElseThrow()).isEqualTo(planetarySystem);
+        assertThat(itemCacheHit.orElseThrow()).isEqualTo(planetarySystem);
+
+        verify(mockPlanetarySystemRepository, times(1)).findById(testID);
+        assertThat(planetarySystemFromCache(testID)).isEqualTo(planetarySystem);
+    }
+
+    @Test
+    void givenRedisCachingWhenPlanetarySystemCachedThenFoundInCache() {
+        UUID testID = UUID.fromString("1579d9da-e4ab-4992-b1da-6a42b35eb5c7");
+        PlanetarySystem planetarySystem = new PlanetarySystem();
+        planetarySystem.setId(testID);
+
+        productService.cachePlanetarySystem(planetarySystem);
+
+        assertThat(planetarySystemFromCache(testID)).isEqualTo(planetarySystem);
+    }
+
+    private Object celestialBodyFromCache(Object key) {
+        return Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("celestialBodyCache")).get(key)).get();
+    }
+
+    private Object planetarySystemFromCache(Object key) {
+        return Objects.requireNonNull(Objects.requireNonNull(cacheManager.getCache("planetarySystemCache")).get(key)).get();
     }
 
     @TestConfiguration
@@ -86,9 +123,5 @@ public class ProductServiceCachingIntegrationTest {
         public void stopRedis() {
             this.redisServer.stop();
         }
-    }
-
-    private Object itemFromCache() {
-        return cacheManager.getCache("componentCache").get(UUID.fromString("9708b2f4-98d6-4891-b59e-52da0a484fc5")).get();
     }
 }

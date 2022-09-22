@@ -1,6 +1,8 @@
 package com.kbertv.productService.model;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -16,10 +18,8 @@ public class PlanetarySystem implements Serializable {
 
     @Id
     private UUID id;
-
     private String name;
-
     private String owner;
-
-    private ArrayList<UUID> celestialBodies = new ArrayList<>();
+    private ArrayList<CelestialBody> celestialBodies = new ArrayList<>();
+    private float price;
 }

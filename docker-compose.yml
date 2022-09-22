@@ -7,28 +7,40 @@ services:
       context: .
       dockerfile: .docker/Dockerfile
     ports:
-      - 8082:8082
+      - "8082:8082"
+    environment:
+      - spring_data_mongodb_host=mongoDB
+      - spring_data_mongodb_port=27017
+      - spring_data_mongodb_database=productservice_db
+      - spring_redis_host=redisCache
+      - spring_redis_port=6379
+      - spring_redis_database=0
+      - spring_rabbitmq_host=rabbitmq
+      - spring_rabbitmq_port=5672
+      - spring_rabbitmq_username=guest
+      - spring_rabbitmq_password=guest
+      - warehouse.baseurl=http://warehouse:8081/
     depends_on:
-      - mongo_db
-      - redis_server
+      - mongoDB
+      - redisCache
     networks:
-      - warehouse_common_network
-  mongo_db:
-    container_name: mongodb_productservice
+      - warehouse_commonNetwork
+  mongoDB:
+    container_name: mongoDBProductService
     image: 'mongo:4.4.3'
     restart: always
     ports:
-      - 27018:27018
+      - "27018:27017"
     networks:
-      - warehouse_common_network
-  redis_server:
-    container_name: redis_productservice
+      - warehouse_commonNetwork
+  redisCache:
+    container_name: redisCacheProductService
     image: 'redis:7.0.4'
     restart: always
     ports:
-      - 16379:16379
+      - "16379:6379"
     networks:
-      - warehouse_common_network
+      - warehouse_commonNetwork
 networks:
-  warehouse_common_network:
+  warehouse_commonNetwork:
     external: true

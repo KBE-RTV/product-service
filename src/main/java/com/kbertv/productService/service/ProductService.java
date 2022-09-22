@@ -2,10 +2,13 @@ package com.kbertv.productService.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kbertv.productService.exception.CelestialBodyNotFoundException;
 import com.kbertv.productService.model.CelestialBody;
 import com.kbertv.productService.model.PlanetarySystem;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -15,116 +18,126 @@ import org.springframework.web.client.RestTemplate;
 import javax.annotation.PreDestroy;
 import java.util.*;
 
+/**
+ * Service with provides the functionality of the Product Service
+ */
 @Service
-public class ProductService implements IProductService{
+@Slf4j
+public class ProductService implements IProductService {
 
     private final CelestialBodyRepository celestialBodyRepository;
     private final PlanetarySystemRepository planetarySystemRepository;
-    private final String WAREHOUSE_BASEURL = "http://warehouse:8080/";
+    @Value("${warehouse.baseurl}")
+    private String warehouseBaseurl;
+    @Autowired
+    private CacheManager cacheManager;
 
+    /**
+     * Instantiates a new Product service.
+     *
+     * @param celestialBodyRepository   the celestial body repository
+     * @param planetarySystemRepository the planetary system repository
+     */
     public ProductService(CelestialBodyRepository celestialBodyRepository, PlanetarySystemRepository planetarySystemRepository) {
         this.celestialBodyRepository = celestialBodyRepository;
         this.planetarySystemRepository = planetarySystemRepository;
     }
 
     @Override
-    public PlanetarySystem createPlanetarySystem(String name ,String owner, ArrayList<UUID> celestialBodies) {
-        if (isCompositionCorrect(celestialBodies)){
-            return planetarySystemRepository.save(new PlanetarySystem(UUID.randomUUID(),name ,owner, celestialBodies));
-        }else{
-            return null;
-        }
+    public void cachePlanetarySystem(PlanetarySystem planetarySystem) {
+        try {
+            cacheManager.getCache("planetarySystemCache").putIfAbsent(planetarySystem.getId(), planetarySystem);
+        } catch (NullPointerException ignored) {
 
+        }
     }
 
     @Override
-    @Cacheable(value = "allProductsCache")
-    public List<PlanetarySystem> getAllProducts() {
+    public PlanetarySystem savePlanetarySystem(PlanetarySystem planetarySystem) {
+        if (isCompositionCorrect(planetarySystem.getCelestialBodies())) {
+            cachePlanetarySystem(planetarySystem);
+            return planetarySystemRepository.save(planetarySystem);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public List<PlanetarySystem> getAllPlanetarySystems() {
         return planetarySystemRepository.findAll();
     }
 
     @Override
-    @Cacheable(value = "productCache")
-    public Optional<PlanetarySystem> getProduct(UUID id) {
+    @Cacheable(value = "planetarySystemCache")
+    public Optional<PlanetarySystem> getPlanetarySystem(UUID id) {
         return planetarySystemRepository.findById(id);
     }
 
     @Override
-    @Cacheable(value = "allComponentsCache")
-    public List<CelestialBody> getAllComponents() {
+    public List<CelestialBody> getAllCelestialBodies() {
         return celestialBodyRepository.findAll();
     }
 
     @Override
-    @Cacheable(value = "componentCache")
-    public Optional<CelestialBody> getComponent(UUID id) {
+    @Cacheable(value = "celestialBodyCache")
+    public Optional<CelestialBody> getCelestialBody(UUID id) {
         return celestialBodyRepository.findById(id);
     }
 
-    private boolean isCompositionCorrect(ArrayList<UUID> celestialBodyIds) {
-        if (celestialBodyIds.isEmpty()){
+    private boolean isCompositionCorrect(ArrayList<CelestialBody> celestialBodies) {
+        if (celestialBodies.isEmpty()) {
             return false;
-        }else {
-            ArrayList<CelestialBody> celestialBodies;
-            try {
-                celestialBodies = idToObjects(celestialBodyIds);
-            } catch (CelestialBodyNotFoundException e) {
-                return false;
-            }
+        } else {
             return celestialBodies.get(0).getType().equals("sun");
         }
     }
 
-    private ArrayList<CelestialBody> idToObjects(ArrayList<UUID> idList) throws CelestialBodyNotFoundException {
-        ArrayList<CelestialBody> celestialBodies = new ArrayList<>();
-        for (UUID uuid : idList) {
-            celestialBodies.add(celestialBodyRepository.findById(uuid).orElseThrow(()->new CelestialBodyNotFoundException(uuid+" not found")));
-        }
-        return celestialBodies;
-    }
-
     @Override
     @EventListener(ApplicationReadyEvent.class)
-    public void getInventoryFromWarehouse(){
+    public void getInventoryFromWarehouse() {
         getCelestialBodiesFromWarehouse();
         getPlanetarySystemsFromWarehouse();
     }
 
-    private void getCelestialBodiesFromWarehouse(){
+    private void getCelestialBodiesFromWarehouse() {
         RestTemplate restTemplate = new RestTemplate();
         final ObjectMapper objectMapper = new ObjectMapper();
         try {
-            String celestialBodyJSON = restTemplate.getForEntity(WAREHOUSE_BASEURL + "components", String.class).getBody();
+            String celestialBodyJSON = restTemplate.getForEntity(warehouseBaseurl + "celestialBodies", String.class).getBody();
             CelestialBody[] celestialBodies = objectMapper.readValue(celestialBodyJSON, CelestialBody[].class);
             celestialBodyRepository.saveAll(Arrays.asList(celestialBodies));
-            System.out.println("Celestial Bodies imported");
-        }catch (RestClientException e){
-            System.err.println("Warehouse not reachable: " + e.getMessage());
+            log.info("Celestial Bodies imported");
+        } catch (RestClientException e) {
+            log.error("Warehouse not reachable: " + e.getMessage());
         } catch (JsonProcessingException e) {
-            System.err.println("Import failed: "+ e.getMessage());
+            log.error("Import failed: " + e.getMessage());
         }
     }
 
-    private void getPlanetarySystemsFromWarehouse(){
+    private void getPlanetarySystemsFromWarehouse() {
         RestTemplate restTemplate = new RestTemplate();
         final ObjectMapper objectMapper = new ObjectMapper();
         try {
-            String planetarySystemsJSON = restTemplate.getForEntity(WAREHOUSE_BASEURL + "products", String.class).getBody();
+            String planetarySystemsJSON = restTemplate.getForEntity(warehouseBaseurl + "planetarySystems", String.class).getBody();
             PlanetarySystem[] planetarySystems = objectMapper.readValue(planetarySystemsJSON, PlanetarySystem[].class);
             planetarySystemRepository.saveAll(Arrays.asList(planetarySystems));
-            System.out.println("Planetary Systems imported");
-        }catch (RestClientException e){
-            System.err.println("Warehouse not reachable: " + e.getMessage());
+            log.info("Planetary Systems imported");
+        } catch (RestClientException e) {
+            log.error("Warehouse not reachable: " + e.getMessage());
         } catch (JsonProcessingException e) {
-            System.err.println("Import failed: "+ e.getMessage());
+            log.error("Import failed: " + e.getMessage());
         }
     }
 
+    /**
+     * mirrors the Product Service DB to the Warehouse DB
+     */
     @PreDestroy
-    public void saveInventoryToWarehouse(){
+    public void saveInventoryToWarehouse() {
         RestTemplate restTemplate = new RestTemplate();
-        String url = WAREHOUSE_BASEURL + "products";
+        String url = warehouseBaseurl + "planetarySystems";
         ArrayList<PlanetarySystem> planetarySystems = (ArrayList<PlanetarySystem>) planetarySystemRepository.findAll();
-        restTemplate.postForObject(url,planetarySystems, ArrayList.class);
+        planetarySystems.forEach((planetarySystem -> planetarySystem.setPrice(0)));
+        restTemplate.postForObject(url, planetarySystems, ArrayList.class);
     }
 }
