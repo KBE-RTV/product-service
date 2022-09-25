@@ -48,7 +48,6 @@ public class ProductService implements IProductService {
         try {
             cacheManager.getCache("planetarySystemCache").putIfAbsent(planetarySystem.getId(), planetarySystem);
         } catch (NullPointerException ignored) {
-
         }
     }
 
