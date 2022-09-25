@@ -32,6 +32,8 @@ public class RabbitMQConfig {
     private String responseQueue;
     @Value("${rabbitmq.queue.response.key}")
     private String responseRoutingKey;
+    @Value("${rabbitmq.queue.response.price.name}")
+    private String priceServiceResponseQueue;
 
     @Autowired
     public void setExchange(@Lazy TopicExchange exchange) {
@@ -106,7 +108,7 @@ public class RabbitMQConfig {
     @Bean(name = "asyncRabbitTemplateForProductService")
     public AsyncRabbitTemplate asyncRabbitTemplateForProductService(RabbitTemplate rabbitTemplate) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(rabbitTemplate.getConnectionFactory());
-        container.setQueueNames(responseQueue);
+        container.setQueueNames(priceServiceResponseQueue);
         return new AsyncRabbitTemplate(rabbitTemplate, container);
     }
 }

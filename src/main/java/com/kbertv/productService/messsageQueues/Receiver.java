@@ -51,27 +51,39 @@ public class Receiver {
             if (callRequestDTO.isRequestTypePlanetarySystem()) {
                 PlanetarySystemDetailDTO planetarySystemDetailDTO = getDTOPlanetarySystem(callRequestDTO);
                 if (planetarySystemDetailDTO.isPriceCalculated()) {
-                    return objectMapper.writeValueAsString(planetarySystemDetailDTO);
+                    String response = objectMapper.writeValueAsString(planetarySystemDetailDTO);
+                    log.info("Received and processed message: " + response);
+                    return response;
                 } else {
-                    return cacheResponseFromPriceService(sender.sendAndReceiveCallToPriceService(objectMapper.writeValueAsString(planetarySystemDetailDTO)));
+                    String response = cacheResponseFromPriceService(sender.sendAndReceiveCallToPriceService(objectMapper.writeValueAsString(planetarySystemDetailDTO)));
+                    log.info("Received and processed message: " + response);
+                    return response;
                 }
             }
             if (callRequestDTO.isRequestTypeCelestialBody()) {
-                return getDTOCelestialBodyAsJson(callRequestDTO);
+                String response = getDTOCelestialBodyAsJson(callRequestDTO);
+                log.info("Received and processed message: " + response);
+                return response;
             }
             if (callRequestDTO.isRequestTypeAllCelestialBodies()) {
-                return getDTOAllCelestialBodiesAsJson(callRequestDTO);
+                String response = getDTOAllCelestialBodiesAsJson(callRequestDTO);
+                log.info("Received and processed message: " + response);
+                return response;
             }
             if (callRequestDTO.isRequestTypeAllPlanetarySystems()) {
                 PlanetarySystemDetailDTO planetarySystemDetailDTO = getDTOAllPlanetarySystems(callRequestDTO);
-                return getDTOWithPrice(planetarySystemDetailDTO);
+                String response = getDTOWithPrice(planetarySystemDetailDTO);
+                log.info("Received and processed message: " + response);
+                return response;
             }
             log.error("Message could be parsed but request not read");
         } catch (Exception e) {
             try {
                 CallCreateDTO callCreateDTO = objectMapper.readValue(jsonMessage, CallCreateDTO.class);
                 PlanetarySystemDetailDTO planetarySystemDetailDTO = createPlanetarySystem(callCreateDTO);
-                return getDTOWithPrice(planetarySystemDetailDTO);
+                String response = getDTOWithPrice(planetarySystemDetailDTO);
+                log.info("Received and processed message: " + response);
+                return response;
             } catch (Exception f) {
                 log.error("Message could not be parsed: " + jsonMessage + System.lineSeparator() + f + System.lineSeparator() + e);
             }
